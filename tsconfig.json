@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types"],
+    "lib": ["es2022"],
+    "module": "commonjs",
+    "target": "es2022",
+    "esModuleInterop": true,
+    "strict": false,         
+    "noImplicitAny": false,  
+    "skipLibCheck": true    
+  },
+}
