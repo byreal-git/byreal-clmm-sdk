@@ -16,7 +16,8 @@
     }
   },
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "build": "tsc"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",

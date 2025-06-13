@@ -7,7 +7,7 @@ import BN from 'bn.js';
 
 import { BYREAL_CLMM_PROGRAM_ID } from '../constants.js';
 
-import ByrealClmmIDL from './target/idl/byreal_amm_v3.json' with { type: 'json' };
+import ByrealClmmIDL from './target/idl/byreal_amm_v3.json';
 import { ByrealClmm } from './target/types/byreal_amm_v3.js';
 
 export const getAmmV3Program = (programId: PublicKey): Program<ByrealClmm> => {
@@ -43,17 +43,15 @@ export class BaseInstruction {
 
     const _openTime = openTime || new BN(0);
 
-    const instruction = program.methods
-      .createPool(sqrtPriceX64, _openTime)
-      .accounts({
-        poolCreator,
-        poolManager,
-        ammConfig: ammConfigId,
-        tokenMint0: mintA,
-        tokenMint1: mintB,
-        tokenProgram0: mintProgramIdA,
-        tokenProgram1: mintProgramIdB,
-      });
+    const instruction = program.methods.createPool(sqrtPriceX64, _openTime).accounts({
+      poolCreator,
+      poolManager,
+      ammConfig: ammConfigId,
+      tokenMint0: mintA,
+      tokenMint1: mintB,
+      tokenProgram0: mintProgramIdA,
+      tokenProgram1: mintProgramIdB,
+    });
 
     // If there are additional mint accounts, add them as remaining accounts
     if (extendMintAccount && extendMintAccount.length > 0) {
@@ -95,7 +93,7 @@ export class BaseInstruction {
     liquidity: BN,
     amountMaxA: BN,
     amountMaxB: BN,
-    withMetadata: "create" | "no-create",
+    withMetadata: 'create' | 'no-create',
 
     exTickArrayBitmap?: PublicKey
   ): Promise<TransactionInstruction> {
@@ -110,7 +108,7 @@ export class BaseInstruction {
         liquidity,
         amountMaxA,
         amountMaxB,
-        withMetadata === "create",
+        withMetadata === 'create',
         null // Set baseFlag to null, since this is based on liquidity
       )
       .accountsPartial({
@@ -134,9 +132,7 @@ export class BaseInstruction {
 
     // If there are additional tick array bitmaps, add them as remaining accounts
     if (exTickArrayBitmap) {
-      instruction.remainingAccounts([
-        { pubkey: exTickArrayBitmap, isSigner: false, isWritable: true },
-      ]);
+      instruction.remainingAccounts([{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }]);
     }
 
     return await instruction.instruction();
@@ -167,7 +163,7 @@ export class BaseInstruction {
     liquidity: BN,
     amountMaxA: BN,
     amountMaxB: BN,
-    withMetadata: "create" | "no-create",
+    withMetadata: 'create' | 'no-create',
 
     exTickArrayBitmap?: PublicKey
   ): Promise<TransactionInstruction> {
@@ -182,7 +178,7 @@ export class BaseInstruction {
         liquidity,
         amountMaxA,
         amountMaxB,
-        withMetadata === "create",
+        withMetadata === 'create',
         null
       )
       .accountsPartial({
@@ -207,9 +203,7 @@ export class BaseInstruction {
 
     // If there are additional tick array bitmaps, add them as remaining accounts
     if (exTickArrayBitmap) {
-      instruction.remainingAccounts([
-        { pubkey: exTickArrayBitmap, isSigner: false, isWritable: true },
-      ]);
+      instruction.remainingAccounts([{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }]);
     }
 
     return await instruction.instruction();
@@ -239,8 +233,8 @@ export class BaseInstruction {
     tickArrayLowerStartIndex: number,
     tickArrayUpperStartIndex: number,
 
-    withMetadata: "create" | "no-create",
-    base: "MintA" | "MintB",
+    withMetadata: 'create' | 'no-create',
+    base: 'MintA' | 'MintB',
     baseAmount: BN,
     otherAmountMax: BN,
 
@@ -255,10 +249,10 @@ export class BaseInstruction {
         tickArrayLowerStartIndex,
         tickArrayUpperStartIndex,
         new BN(0), // Set liquidity to 0, since this is based on base amount
-        base === "MintA" ? baseAmount : otherAmountMax, // amount0Max
-        base === "MintA" ? otherAmountMax : baseAmount, // amount1Max
-        withMetadata === "create",
-        base === "MintA" // baseFlag
+        base === 'MintA' ? baseAmount : otherAmountMax, // amount0Max
+        base === 'MintA' ? otherAmountMax : baseAmount, // amount1Max
+        withMetadata === 'create',
+        base === 'MintA' // baseFlag
       )
       .accountsPartial({
         payer,
@@ -281,9 +275,7 @@ export class BaseInstruction {
 
     // If there are additional tick array bitmaps, add them as remaining accounts
     if (exTickArrayBitmap) {
-      instruction.remainingAccounts([
-        { pubkey: exTickArrayBitmap, isSigner: false, isWritable: true },
-      ]);
+      instruction.remainingAccounts([{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }]);
     }
 
     return await instruction.instruction();
@@ -312,8 +304,8 @@ export class BaseInstruction {
     tickArrayLowerStartIndex: number,
     tickArrayUpperStartIndex: number,
 
-    withMetadata: "create" | "no-create",
-    base: "MintA" | "MintB",
+    withMetadata: 'create' | 'no-create',
+    base: 'MintA' | 'MintB',
     baseAmount: BN,
     otherAmountMax: BN,
 
@@ -328,10 +320,10 @@ export class BaseInstruction {
         tickArrayLowerStartIndex,
         tickArrayUpperStartIndex,
         new BN(0), // Set liquidity to 0, since this is based on base amount
-        base === "MintA" ? baseAmount : otherAmountMax, // amountMaxA
-        base === "MintA" ? otherAmountMax : baseAmount, // amountMaxB
-        withMetadata === "create",
-        base === "MintA" // baseFlag
+        base === 'MintA' ? baseAmount : otherAmountMax, // amountMaxA
+        base === 'MintA' ? otherAmountMax : baseAmount, // amountMaxB
+        withMetadata === 'create',
+        base === 'MintA' // baseFlag
       )
       .accountsPartial({
         payer,
@@ -355,9 +347,7 @@ export class BaseInstruction {
 
     // If there are additional tick array bitmaps, add them as remaining accounts
     if (exTickArrayBitmap) {
-      instruction.remainingAccounts([
-        { pubkey: exTickArrayBitmap, isSigner: false, isWritable: true },
-      ]);
+      instruction.remainingAccounts([{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }]);
     }
 
     return await instruction.instruction();
@@ -432,9 +422,7 @@ export class BaseInstruction {
 
     // If there are additional tick array bitmaps, add them as remaining accounts
     if (exTickArrayBitmap) {
-      instruction.remainingAccounts([
-        { pubkey: exTickArrayBitmap, isSigner: false, isWritable: true },
-      ]);
+      instruction.remainingAccounts([{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }]);
     }
 
     return await instruction.instruction();
@@ -457,7 +445,7 @@ export class BaseInstruction {
     mintMintA: PublicKey,
     mintMintB: PublicKey,
 
-    base: "MintA" | "MintB",
+    base: 'MintA' | 'MintB',
     baseAmount: BN,
     otherAmountMax: BN,
 
@@ -468,9 +456,9 @@ export class BaseInstruction {
     const instruction = program.methods
       .increaseLiquidityV2(
         new BN(0), // Set liquidity to 0, since this is based on base amount
-        base === "MintA" ? baseAmount : otherAmountMax, // amount0Max
-        base === "MintA" ? otherAmountMax : baseAmount, // amount1Max
-        base === "MintA" // baseFlag
+        base === 'MintA' ? baseAmount : otherAmountMax, // amount0Max
+        base === 'MintA' ? otherAmountMax : baseAmount, // amount1Max
+        base === 'MintA' // baseFlag
       )
       .accountsPartial({
         nftOwner: positionNftOwner,
@@ -490,9 +478,7 @@ export class BaseInstruction {
 
     // If there are additional tick array bitmaps, add them as remaining accounts
     if (exTickArrayBitmap) {
-      instruction.remainingAccounts([
-        { pubkey: exTickArrayBitmap, isSigner: false, isWritable: true },
-      ]);
+      instruction.remainingAccounts([{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }]);
     }
 
     return await instruction.instruction();
@@ -528,29 +514,25 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .decreaseLiquidityV2(liquidity, amountMinA, amountMinB)
-      .accountsPartial({
-        nftOwner: positionNftOwner,
-        nftAccount: positionNftAccount,
-        personalPosition,
-        poolState: poolId,
-        protocolPosition,
-        tokenVault0: mintVaultA,
-        tokenVault1: mintVaultB,
-        tickArrayLower,
-        tickArrayUpper,
-        recipientTokenAccount0: ownerTokenAccountA,
-        recipientTokenAccount1: ownerTokenAccountB,
-        vault0Mint: mintMintA,
-        vault1Mint: mintMintB,
-      });
+    const instruction = program.methods.decreaseLiquidityV2(liquidity, amountMinA, amountMinB).accountsPartial({
+      nftOwner: positionNftOwner,
+      nftAccount: positionNftAccount,
+      personalPosition,
+      poolState: poolId,
+      protocolPosition,
+      tokenVault0: mintVaultA,
+      tokenVault1: mintVaultB,
+      tickArrayLower,
+      tickArrayUpper,
+      recipientTokenAccount0: ownerTokenAccountA,
+      recipientTokenAccount1: ownerTokenAccountB,
+      vault0Mint: mintMintA,
+      vault1Mint: mintMintB,
+    });
 
     // Build remaining accounts
     const remainingAccounts = [
-      ...(exTickArrayBitmap
-        ? [{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }]
-        : []),
+      ...(exTickArrayBitmap ? [{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }] : []),
       ...rewardAccounts
         .map((i) => [
           { pubkey: i.poolRewardVault, isSigner: false, isWritable: true },
@@ -590,26 +572,22 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .swapV2(amount, otherAmountThreshold, sqrtPriceLimitX64, isBaseInput)
-      .accounts({
-        payer,
-        ammConfig: ammConfigId,
-        poolState: poolId,
-        inputTokenAccount,
-        outputTokenAccount,
-        inputVault,
-        outputVault,
-        observationState: observationId,
-        inputVaultMint: inputMint,
-        outputVaultMint: outputMint,
-      });
+    const instruction = program.methods.swapV2(amount, otherAmountThreshold, sqrtPriceLimitX64, isBaseInput).accounts({
+      payer,
+      ammConfig: ammConfigId,
+      poolState: poolId,
+      inputTokenAccount,
+      outputTokenAccount,
+      inputVault,
+      outputVault,
+      observationState: observationId,
+      inputVaultMint: inputMint,
+      outputVaultMint: outputMint,
+    });
 
     // Build remaining accounts
     const remainingAccounts = [
-      ...(exTickArrayBitmap
-        ? [{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }]
-        : []),
+      ...(exTickArrayBitmap ? [{ pubkey: exTickArrayBitmap, isSigner: false, isWritable: true }] : []),
       ...tickArray.map((i) => ({
         pubkey: i,
         isSigner: false,
@@ -671,12 +649,7 @@ export class BaseInstruction {
     const program = getAmmV3Program(programId);
 
     const instruction = program.methods
-      .setRewardParams(
-        rewardIndex,
-        emissionsPerSecondX64,
-        new BN(openTime),
-        new BN(endTime)
-      )
+      .setRewardParams(rewardIndex, emissionsPerSecondX64, new BN(openTime), new BN(endTime))
       .accounts({
         authority,
         ammConfig: ammConfigId,
@@ -698,15 +671,13 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .collectRemainingRewards(rewardIndex)
-      .accounts({
-        rewardFunder,
-        funderTokenAccount,
-        poolState: poolId,
-        rewardTokenVault: rewardVault,
-        rewardVaultMint: rewardMint,
-      });
+    const instruction = program.methods.collectRemainingRewards(rewardIndex).accounts({
+      rewardFunder,
+      funderTokenAccount,
+      poolState: poolId,
+      rewardTokenVault: rewardVault,
+      rewardVaultMint: rewardMint,
+    });
 
     return await instruction.instruction();
   }
@@ -724,13 +695,7 @@ export class BaseInstruction {
     const program = getAmmV3Program(programId);
 
     const instruction = program.methods
-      .createAmmConfig(
-        index,
-        tickSpacing,
-        tradeFeeRate,
-        protocolFeeRate,
-        fundFeeRate
-      )
+      .createAmmConfig(index, tickSpacing, tradeFeeRate, protocolFeeRate, fundFeeRate)
       .accountsPartial({
         owner,
         ammConfig: ammConfigId,
@@ -808,11 +773,9 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .updateOperationAccount(param, keys)
-      .accounts({
-        owner,
-      });
+    const instruction = program.methods.updateOperationAccount(param, keys).accounts({
+      owner,
+    });
 
     return await instruction.instruction();
   }
@@ -859,15 +822,13 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .collectProtocolFee(amount0Requested, amount1Requested)
-      .accounts({
-        poolState,
-        tokenVault0,
-        tokenVault1,
-        vault0Mint,
-        vault1Mint,
-      });
+    const instruction = program.methods.collectProtocolFee(amount0Requested, amount1Requested).accounts({
+      poolState,
+      tokenVault0,
+      tokenVault1,
+      vault0Mint,
+      vault1Mint,
+    });
 
     return await instruction.instruction();
   }
@@ -885,15 +846,13 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .collectFundFee(amount0Requested, amount1Requested)
-      .accounts({
-        poolState,
-        tokenVault0,
-        tokenVault1,
-        vault0Mint,
-        vault1Mint,
-      });
+    const instruction = program.methods.collectFundFee(amount0Requested, amount1Requested).accounts({
+      poolState,
+      tokenVault0,
+      tokenVault1,
+      vault0Mint,
+      vault1Mint,
+    });
 
     return await instruction.instruction();
   }
@@ -992,21 +951,19 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .increaseLiquidity(liquidity, amount0Max, amount1Max)
-      .accountsPartial({
-        nftOwner,
-        nftAccount,
-        poolState,
-        protocolPosition,
-        personalPosition,
-        tickArrayLower,
-        tickArrayUpper,
-        tokenAccount0,
-        tokenAccount1,
-        tokenVault0,
-        tokenVault1,
-      });
+    const instruction = program.methods.increaseLiquidity(liquidity, amount0Max, amount1Max).accountsPartial({
+      nftOwner,
+      nftAccount,
+      poolState,
+      protocolPosition,
+      personalPosition,
+      tickArrayLower,
+      tickArrayUpper,
+      tokenAccount0,
+      tokenAccount1,
+      tokenVault0,
+      tokenVault1,
+    });
 
     // Add remaining accounts
     if (remainingAccounts && remainingAccounts.length > 0) {
@@ -1042,21 +999,19 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .decreaseLiquidity(liquidity, amountAMin, amountBMin)
-      .accountsPartial({
-        nftOwner,
-        nftAccount,
-        personalPosition,
-        poolState,
-        protocolPosition,
-        tokenVault0: tokenVaultA,
-        tokenVault1: tokenVaultB,
-        tickArrayLower,
-        tickArrayUpper,
-        recipientTokenAccount0: recipientTokenAccountA,
-        recipientTokenAccount1: recipientTokenAccountB,
-      });
+    const instruction = program.methods.decreaseLiquidity(liquidity, amountAMin, amountBMin).accountsPartial({
+      nftOwner,
+      nftAccount,
+      personalPosition,
+      poolState,
+      protocolPosition,
+      tokenVault0: tokenVaultA,
+      tokenVault1: tokenVaultB,
+      tickArrayLower,
+      tickArrayUpper,
+      recipientTokenAccount0: recipientTokenAccountA,
+      recipientTokenAccount1: recipientTokenAccountB,
+    });
 
     // Add remaining accounts
     if (remainingAccounts && remainingAccounts.length > 0) {
@@ -1094,19 +1049,17 @@ export class BaseInstruction {
     // First tick array as required account, the rest as remaining accounts
     const [firstTickArray, ...restTickArrays] = tickArray;
 
-    const instruction = program.methods
-      .swap(amount, otherAmountThreshold, sqrtPriceLimitX64, isBaseInput)
-      .accounts({
-        payer,
-        ammConfig,
-        poolState,
-        inputTokenAccount,
-        outputTokenAccount,
-        inputVault,
-        outputVault,
-        observationState,
-        tickArray: firstTickArray,
-      });
+    const instruction = program.methods.swap(amount, otherAmountThreshold, sqrtPriceLimitX64, isBaseInput).accounts({
+      payer,
+      ammConfig,
+      poolState,
+      inputTokenAccount,
+      outputTokenAccount,
+      inputVault,
+      outputVault,
+      observationState,
+      tickArray: firstTickArray,
+    });
 
     // Build remaining accounts, including remaining tick arrays and additional accounts
     const allRemainingAccounts = [
@@ -1190,16 +1143,14 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .depositOffchainReward(amount)
-      .accountsPartial({
-        payer,
-        poolId,
-        authority,
-        tokenMint,
-        payerTokenAccount,
-        tokenProgram,
-      });
+    const instruction = program.methods.depositOffchainReward(amount).accountsPartial({
+      payer,
+      poolId,
+      authority,
+      tokenMint,
+      payerTokenAccount,
+      tokenProgram,
+    });
 
     return await instruction.instruction();
   }
@@ -1216,16 +1167,14 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .claimOffchainReward(amount)
-      .accountsPartial({
-        claimer,
-        authority,
-        poolId,
-        tokenMint,
-        claimerTokenAccount,
-        tokenProgram,
-      });
+    const instruction = program.methods.claimOffchainReward(amount).accountsPartial({
+      claimer,
+      authority,
+      poolId,
+      tokenMint,
+      claimerTokenAccount,
+      tokenProgram,
+    });
 
     return await instruction.instruction();
   }
@@ -1241,15 +1190,13 @@ export class BaseInstruction {
   ): Promise<TransactionInstruction> {
     const program = getAmmV3Program(programId);
 
-    const instruction = program.methods
-      .withdrawOffchainReward(amount)
-      .accountsPartial({
-        authority,
-        tokenMint,
-        poolId,
-        receiverTokenAccount,
-        tokenProgram,
-      });
+    const instruction = program.methods.withdrawOffchainReward(amount).accountsPartial({
+      authority,
+      tokenMint,
+      poolId,
+      receiverTokenAccount,
+      tokenProgram,
+    });
 
     return await instruction.instruction();
   }

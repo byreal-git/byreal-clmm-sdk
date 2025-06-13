@@ -107,7 +107,7 @@ export async function makeTransaction(params: {
         finalComputeUnitPrice = Math.floor(maxFeeInMicroLamports / computeUnitLimit);
         console.info(`Adjust compute unit price to meet maximum fee limit: ${finalComputeUnitPrice} microLamports`);
       }
-    } else if (exactFee !== undefined) {
+    } else if (exactFee) {
       // Convert exactFee from SOL to microLamports
       const exactFeeInMicroLamports = exactFee * 1_000_000_000_000_000;
       // Compute unit price = exact fee / compute unit limit

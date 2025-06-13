@@ -24,7 +24,6 @@ export class BNLayout<P extends string = ''> extends Layout<BN, P> {
   signed: boolean;
 
   constructor(span: number, signed: boolean, property?: P) {
-    //@ts-expect-error type wrong for super()'s type different from extends, but it desn't matter
     super(span, property);
     this.blob = blob(span);
     this.signed = signed;

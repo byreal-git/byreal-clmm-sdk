@@ -20,6 +20,12 @@ Tips: When running examples in playgrounds, you need to set the private key in .
 yarn vitest
 ```
 
+## Build
+
+```bash
+yarn build
+```
+
 ## Utility functions
 
 ```ts
