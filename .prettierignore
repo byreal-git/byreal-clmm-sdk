@@ -1,0 +1,10 @@
+# 忽略以下文件夹不被 Prettier 格式化
+node_modules
+/dist
+/.next
+/out
+/tmp
+/coverage
+/.nx/cache
+/.nx/workspace-data
+pnpm-lock.yaml

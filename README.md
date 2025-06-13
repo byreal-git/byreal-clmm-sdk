@@ -20,12 +20,6 @@ Tips: When running examples in playgrounds, you need to set the private key in .
 yarn vitest
 ```
 
-## Build
-
-<!-- TODO: -->
-
-Run `pnpm nx build clmm-sdk` to build the library.
-
 ## Utility functions
 
 ```ts
