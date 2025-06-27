@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/byreal_clmm.json`.
  */
 export type ByrealClmm = {
-  address: '45iBNkaENereLKMjLm2LHkF3hpDapf6mnvrM5HWFg9cY';
+  address: 'REALQqNEomY6cQGZJUGwywTBD2UmDT32rZcNnfxQ5N2';
   metadata: {
     name: 'byrealClmm';
     version: '0.1.0';
@@ -1828,7 +1828,7 @@ export type ByrealClmm = {
           docs: ['only super admin can create admin group'];
           writable: true;
           signer: true;
-          address: '9ZG4mYtayKedcDkRbpGAc13uQDT2Ag9twJBbuwia9Lqg';
+          address: 'AY196f8U5EvM999PVnvLmyvaUnzL4GLiFaGKUgnJXN6o';
         },
         {
           name: 'adminGroup';
@@ -3124,7 +3124,7 @@ export type ByrealClmm = {
           docs: ['only super admin can create admin group'];
           writable: true;
           signer: true;
-          address: '9ZG4mYtayKedcDkRbpGAc13uQDT2Ag9twJBbuwia9Lqg';
+          address: 'AY196f8U5EvM999PVnvLmyvaUnzL4GLiFaGKUgnJXN6o';
         },
         {
           name: 'adminGroup';
