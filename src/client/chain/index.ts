@@ -6,12 +6,13 @@ import {
   AccountLayout,
   MintLayout,
   TOKEN_2022_PROGRAM_ID,
+  createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import { Connection, PublicKey, VersionedTransaction, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import { CLMM_PROGRAM_ID, U64_IGNORE_RANGE } from '../../constants.js';
+import { BYREAL_CLMM_PROGRAM_ID, U64_IGNORE_RANGE } from '../../constants.js';
 import {
   IPoolLayoutWithId,
   IPersonalPositionLayout,
@@ -57,6 +58,7 @@ import {
   calculateRangeAprs,
   getAmountAFromAmountB,
   getAmountBFromAmountA,
+  getTokenProgramId,
 } from './utils.js';
 
 /*
@@ -74,10 +76,10 @@ export class Chain {
   /**
    * Constructor
    * @param params.connection Solana chain connection object
-   * @param params.programId CLMM program ID, default is CLMM_PROGRAM_ID
+   * @param params.programId CLMM program ID, default is BYREAL_CLMM_PROGRAM_ID
    */
   constructor(params: { connection: Connection; programId?: PublicKey }) {
-    const { connection, programId = CLMM_PROGRAM_ID } = params;
+    const { connection, programId = BYREAL_CLMM_PROGRAM_ID } = params;
     this.connection = connection;
     this.programId = programId;
   }
@@ -264,17 +266,41 @@ export class Chain {
     const { userAddress, poolInfo, tickLower, tickUpper, base, baseAmount, otherAmountMax, transactionOptions } =
       params;
     const { mintA, mintB } = poolInfo;
+
     // Calculate the actual required tokenA/B amount
     const amountA = base === 'MintA' ? baseAmount : otherAmountMax;
     const amountB = base === 'MintB' ? baseAmount : otherAmountMax;
-    // Handle SOL/WSOL packaging
-    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleSolWsol({
-      userAddress,
-      mintA,
-      mintB,
-      amountA,
-      amountB,
-    });
+
+    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions, tokenProgramIdA, tokenProgramIdB } =
+      await this.handleSolWsol({
+        userAddress,
+        mintA,
+        mintB,
+        amountA,
+        amountB,
+      });
+
+    const ataInstructions: TransactionInstruction[] = [];
+
+    // MintA
+    if (mintA.toBase58() !== NATIVE_MINT.toBase58()) {
+      const accA = await this.connection.getAccountInfo(tokenAccountA);
+      if (!accA) {
+        ataInstructions.push(
+          createAssociatedTokenAccountInstruction(userAddress, tokenAccountA, userAddress, mintA, tokenProgramIdA)
+        );
+      }
+    }
+
+    if (mintB.toBase58() !== NATIVE_MINT.toBase58()) {
+      const accB = await this.connection.getAccountInfo(tokenAccountB);
+      if (!accB) {
+        ataInstructions.push(
+          createAssociatedTokenAccountInstruction(userAddress, tokenAccountB, userAddress, mintB, tokenProgramIdB)
+        );
+      }
+    }
+
     // Generate position creation instructions
     const { instructions: positionInstructions, signers: positionSigners } =
       await Instruction.openPositionFromBaseInstruction({
@@ -292,9 +318,19 @@ export class Chain {
         otherAmountMax,
         withMetadata: 'create',
       });
-    // Merge all instructions
-    const instructions = [...preInstructions, ...positionInstructions, ...endInstructions];
+
+    // Merge all instructions: ATA creation → pre → position → end
+    const instructions = [
+      ...ataInstructions, // Create ATA if needed (first)
+      ...preInstructions, // SOL/WSOL handling
+      ...positionInstructions, // Position creation
+      ...endInstructions, // Cleanup
+    ];
+
+    console.log('instructions ==>', instructions.length);
+
     const signers = [...positionSigners];
+
     // Construct transaction object
     const transaction = await makeTransaction({
       connection: this.connection,
@@ -303,6 +339,7 @@ export class Chain {
       signers,
       options: transactionOptions,
     });
+
     return {
       instructions,
       signers,
@@ -946,6 +983,8 @@ export class Chain {
   }): Promise<{
     tokenAccountA: PublicKey;
     tokenAccountB: PublicKey;
+    tokenProgramIdA: PublicKey;
+    tokenProgramIdB: PublicKey;
     preInstructions: TransactionInstruction[];
     endInstructions: TransactionInstruction[];
   }> {
@@ -954,14 +993,15 @@ export class Chain {
     const isTokenASOL = mintA.toString() === NATIVE_MINT.toString();
     const isTokenBSOL = mintB.toString() === NATIVE_MINT.toString();
     // Default to use ATA account
-    // TODO: This may need to consider the case of token 2022 in the future
-    let tokenAccountA = getATAAddress(userAddress, mintA).publicKey;
-    let tokenAccountB = getATAAddress(userAddress, mintB).publicKey;
+    const tokenProgramIdA = await getTokenProgramId(this.connection, mintA);
+    const tokenProgramIdB = await getTokenProgramId(this.connection, mintB);
+    let tokenAccountA = getATAAddress(userAddress, mintA, tokenProgramIdA).publicKey;
+    let tokenAccountB = getATAAddress(userAddress, mintB, tokenProgramIdB).publicKey;
     const preInstructions: TransactionInstruction[] = [];
     const endInstructions: TransactionInstruction[] = [];
     // If there is no SOL involved, return directly
     if (!isTokenASOL && !isTokenBSOL) {
-      return { tokenAccountA, tokenAccountB, preInstructions, endInstructions };
+      return { tokenAccountA, tokenAccountB, preInstructions, endInstructions, tokenProgramIdA, tokenProgramIdB };
     }
     // Handle SOL -> WSOL packaging
     if (isTokenASOL || isTokenBSOL) {
@@ -1002,7 +1042,7 @@ export class Chain {
         tokenAccountB = wsolAccount;
       }
     }
-    return { tokenAccountA, tokenAccountB, preInstructions, endInstructions };
+    return { tokenAccountA, tokenAccountB, preInstructions, endInstructions, tokenProgramIdA, tokenProgramIdB };
   }
 
   private async estimateRentFee(space: number, useCache = true): Promise<number> {

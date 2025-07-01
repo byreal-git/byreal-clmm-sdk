@@ -8,7 +8,7 @@ import { Decimal } from 'decimal.js';
 import { SignerCallback } from '../client/chain/models.js';
 import { TickMath } from '../index.js';
 
-import { userKeypair, userAddress, PoolAddress, chain } from './config.js';
+import { userKeypair, userAddress, chain, PoolAddress } from './config.js';
 
 async function main(): Promise<void> {
   // step 1: User selects the pool
@@ -18,8 +18,8 @@ async function main(): Promise<void> {
   console.log('Selected pool address:', poolInfo.poolId.toBase58());
 
   // step 2: User inputs the price range
-  const userStartPrice = '1.1';
-  const userEndPrice = '1.2';
+  const userStartPrice = '0.998';
+  const userEndPrice = '1.002';
 
   // Calculate the accurate tick price, and show it to the user
   const priceInTickLower = TickMath.getTickAlignedPriceDetails(
@@ -38,12 +38,13 @@ async function main(): Promise<void> {
   console.log('========= step 2: User inputs the price range =========');
   console.log(`User input price range: ${userStartPrice} - ${userEndPrice}`);
   console.log(`Accurate price range: ${priceInTickLower.price.toNumber()} - ${priceInTickUpper.price.toNumber()}`);
+  console.log(`Accurate price tick range: ${priceInTickLower.tick} - ${priceInTickUpper.tick}`);
 
-  // step 3: User inputs the amount of TokenA and the token type
+  // step 3: User inputs the amount of TokenB and the token type
   const base = 'MintA';
   const baseAmount = new BN(2 * 10 ** poolInfo.mintDecimalsA);
 
-  // Calculate the amount of TokenB needed
+  // Calculate the amount of TokenA needed
   const amountB = chain.getAmountBFromAmountA({
     priceLower: priceInTickLower.price,
     priceUpper: priceInTickUpper.price,
@@ -54,7 +55,7 @@ async function main(): Promise<void> {
   // Add a 2% slippage
   const amountBWithSlippage = new BN(amountB).mul(new BN(10000 * (1 + 0.02))).div(new BN(10000));
 
-  console.log('========= step 3: User inputs the amount of TokenA and the token type =========');
+  console.log('========= step 3: User inputs the amount of TokenB and the token type =========');
   console.log('Amount of TokenA to be invested =>', Number(baseAmount.toString()) / 10 ** poolInfo.mintDecimalsA);
   console.log('Estimated amount of TokenB needed =>', Number(amountB.toString()) / 10 ** poolInfo.mintDecimalsB);
 

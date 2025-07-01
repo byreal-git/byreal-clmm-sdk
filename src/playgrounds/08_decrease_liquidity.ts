@@ -9,7 +9,7 @@ import { chain, signerCallback, userAddress } from './config.js';
 
 async function main(): Promise<void> {
   // Change to your own NFT mint address
-  const nftMint = new PublicKey('CjouQkvVP5XkABWYQYzCAJMpB3g8yJhADtRcRtEZTj8M');
+  const nftMint = new PublicKey('3eunC8kdMEwBRQHd91cyQ36FVQFXDuicGk7xuVS6hFfk');
 
   const positionInfo = await chain.getRawPositionInfoByNftMint(nftMint);
 
@@ -26,7 +26,7 @@ async function main(): Promise<void> {
   console.log('Current liquidity amount:', liquidity.toString());
   console.log('Liquidity to decrease:', liquidityToDecrease.toString());
 
-  const txid = chain.decreaseLiquidity({
+  const txid = await chain.decreaseLiquidity({
     userAddress,
     nftMint,
     // Decrease half of the liquidity

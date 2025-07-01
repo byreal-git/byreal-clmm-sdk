@@ -8,7 +8,7 @@ import { chain, signerCallback, userAddress } from './config.js';
 
 async function main(): Promise<void> {
   // Change to your own NFT mint address
-  const nftMint = new PublicKey('CjouQkvVP5XkABWYQYzCAJMpB3g8yJhADtRcRtEZTj8M');
+  const nftMint = new PublicKey('CVqLrFi5n3HLzRJdGHdChtoXhycNeveShYkmGfeaXGHC');
   const txid = await chain.collectFees({
     userAddress,
     nftMint,

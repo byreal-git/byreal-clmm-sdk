@@ -29,7 +29,8 @@ export class Instruction {
   }): Promise<{
     instructions: TransactionInstruction[];
   }> {
-    console.log('[clmm sdk] createPoolInstruction fn params:', JSON.stringify(props, null, 2));
+    // console.log('[clmm sdk] createPoolInstruction fn params:', JSON.stringify(props, null, 2));
+
     const { programId, owner, poolManager, mintA, mintB, ammConfigId, initialPriceX64, extendMintAccount, openTime } =
       props;
 
@@ -73,7 +74,7 @@ export class Instruction {
     instructions: TransactionInstruction[];
     signers: Signer[];
   }> {
-    console.log('[clmm sdk] openPositionFromLiquidityInstruction fn params:', JSON.stringify(params, null, 2));
+    // console.log('[clmm sdk] openPositionFromLiquidityInstruction fn params:', JSON.stringify(params, null, 2));
 
     const { poolInfo, ownerInfo, tickLower, tickUpper, liquidity, amountMaxA, amountMaxB, withMetadata } = params;
     const signers: Signer[] = [];
@@ -213,7 +214,7 @@ export class Instruction {
   }): Promise<{
     instructions: TransactionInstruction[];
   }> {
-    console.log('[clmm sdk] closePositionInstruction fn params:', JSON.stringify(params, null, 2));
+    // console.log('[clmm sdk] closePositionInstruction fn params:', JSON.stringify(params, null, 2));
 
     const { programId, nftMint, ownerWallet } = params;
     const positionNftAccount = getATAAddress(ownerWallet, nftMint, TOKEN_2022_PROGRAM_ID).publicKey;
@@ -246,7 +247,7 @@ export class Instruction {
   }): Promise<{
     instructions: TransactionInstruction[];
   }> {
-    console.log('[clmm sdk] increasePositionFromLiquidityInstructions fn params:', JSON.stringify(params, null, 2));
+    // console.log('[clmm sdk] increasePositionFromLiquidityInstructions fn params:', JSON.stringify(params, null, 2));
 
     const { poolInfo, ownerPosition, ownerInfo, liquidity, amountMaxA, amountMaxB } = params;
     const { programId, poolId, tickSpacing } = poolInfo;
@@ -313,7 +314,8 @@ export class Instruction {
   }): Promise<{
     instructions: TransactionInstruction[];
   }> {
-    console.log('[clmm sdk] increasePositionFromBaseInstructions fn params:', JSON.stringify(params, null, 2));
+    // console.log('[clmm sdk] increasePositionFromBaseInstructions fn params:', JSON.stringify(params, null, 2));
+
     const { poolInfo, ownerPosition, ownerInfo, base, baseAmount, otherAmountMax } = params;
     const { programId, poolId, tickSpacing } = poolInfo;
 
@@ -380,7 +382,7 @@ export class Instruction {
   }): Promise<{
     instructions: TransactionInstruction[];
   }> {
-    console.log('[clmm sdk] decreaseLiquidityInstructions fn params:', JSON.stringify(params, null, 2));
+    // console.log('[clmm sdk] decreaseLiquidityInstructions fn params:', JSON.stringify(params, null, 2));
 
     const { poolInfo, ownerPosition, ownerInfo, liquidity, amountMinA, amountMinB } = params;
     const { programId, poolId, tickSpacing } = poolInfo;

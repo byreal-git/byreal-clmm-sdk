@@ -13,7 +13,7 @@ import { chain, userKeypair, userAddress } from './config.js';
 async function main(): Promise<void> {
   // step 1: Select the position to add liquidity
   // Change to your own NFT mint address
-  const nftMint = new PublicKey('CjouQkvVP5XkABWYQYzCAJMpB3g8yJhADtRcRtEZTj8M');
+  const nftMint = new PublicKey('CVqLrFi5n3HLzRJdGHdChtoXhycNeveShYkmGfeaXGHC');
 
   const positionInfo = await chain.getPositionInfoByNftMint(nftMint);
   if (!positionInfo) {

@@ -10,9 +10,7 @@ export const EXTENSION_TICKARRAY_BITMAP_SIZE = 14;
 
 export const U64_IGNORE_RANGE = new BN('18446744073700000000');
 
-export const RAYDIUM_CLMM_PROGRAM_ID = new PublicKey('CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK');
-export const BYREAL_CLMM_PROGRAM_ID = new PublicKey('45iBNkaENereLKMjLm2LHkF3hpDapf6mnvrM5HWFg9cY');
-export const CLMM_PROGRAM_ID = BYREAL_CLMM_PROGRAM_ID;
+export const BYREAL_CLMM_PROGRAM_ID = new PublicKey('REALQqNEomY6cQGZJUGwywTBD2UmDT32rZcNnfxQ5N2');
 
 export const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
 export const RENT_PROGRAM_ID = new PublicKey('SysvarRent111111111111111111111111111111111');

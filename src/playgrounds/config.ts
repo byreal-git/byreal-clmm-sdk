@@ -31,33 +31,14 @@ export const signerCallback: SignerCallback = async (tx) => {
 };
 
 export const TokenAddress = {
-  RAY: new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'),
   USDC: new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
   USDT: new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'),
-  JUP: new PublicKey('JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN'),
   SOL: new PublicKey('So11111111111111111111111111111111111111112'),
+  BBSOL: new PublicKey('Bybit2vBJGhPF52GBdNaQfUJ6ZpThSgHBobjWZpLPb4B'),
 };
 
 export const PoolAddress = {
-  RAY_USDC: new PublicKey('61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht'),
-  SOL_USDC: new PublicKey('CYbD9RaToYMtWKA7QZyoLahnHdWq553Vm62Lh6qWtuxq'),
-};
-
-// 下面是 byreal 的测试池子和 pool 地址
-
-export const ByrealTokenAddress = {
-  TOKEN_A: new PublicKey('9ezwkJ6ERnBthk5AexoWyqLUjtJBHrJE7hbZWsFz1Dmz'),
-  TOKEN_B: new PublicKey('FU1f1YnJLuVCHZbAgE2sANU7W9BSzZoqvAFk7GH5n234'),
-  TOKEN_C: new PublicKey('iZj2e1RccnTbnAvUCTF31Fx65kP9et6AGuvFMpf3Sm8'),
-  TOKEN_MOCK_USDC: new PublicKey('4b26bccjnhv892cVQ5gDnevoBRtUwSe2DnA3Zxm5XRTh'),
-  TOKEN_MOCK_USDT: new PublicKey('teAbcuupxNFRQT6aAi1yTT2rmEZHgGmidxM1EtbzS9X'),
-  TOKEN_wsolc: new PublicKey('teAbcuupxNFRQT6aAi1yTT2rmEZHgGmidxM1EtbzS9X'),
-  TOKEN_bbsolC: new PublicKey('4b26bccjnhv892cVQ5gDnevoBRtUwSe2DnA3Zxm5XRTh'),
-};
-
-export const ByrealPoolAddress = {
-  POOL_A_B: new PublicKey('3nCxWyprG6HbmXhnWd698DHVLLeTS95DzA3nBQkdQyVx'),
-  POOL_B_C: new PublicKey('GuRi1woU7WXjZ9ZGZtcbAW7ZnGW9KE3RfMpwqtYyYNQt'),
-  POOL_MOCK_USDC_USDT: new PublicKey('Hsrt63N85oXSWtAG5eg3W4zaBveubPpQknqGHvERsEjf'),
-  POOL_wsolc_bbsolC: new PublicKey('Hsrt63N85oXSWtAG5eg3W4zaBveubPpQknqGHvERsEjf'),
+  SOL_BBSOL: new PublicKey('87pbGHxigtjdMovzkAAFEe8XFVTETjDomoEFfpSFd2yD'),
+  USDC_USDT: new PublicKey('23XoPQqGw9WMsLoqTu8HMzJLD6RnXsufbKyWPLJywsCT'),
+  SOL_USDC: new PublicKey('9GTj99g9tbz9U6UYDsX6YeRTgUnkYG6GTnHv3qLa5aXq'),
 };

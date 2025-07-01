@@ -7,7 +7,7 @@ import { PublicKey } from '@solana/web3.js';
 import { chain, signerCallback, userAddress } from './config.js';
 
 async function main(): Promise<void> {
-  const nftMint = new PublicKey('2Rf4qWa2rNNtxdPxJEwQZr1rENAF28UxfdPnYRhMcT8p');
+  const nftMint = new PublicKey('3eunC8kdMEwBRQHd91cyQ36FVQFXDuicGk7xuVS6hFfk');
 
   const txid = await chain.decreaseFullLiquidity({
     userAddress,

@@ -8,18 +8,18 @@ import { Decimal } from 'decimal.js';
 import { SignerCallback } from '../client/chain/models.js';
 import { TickMath } from '../index.js';
 
-import { userKeypair, userAddress, ByrealPoolAddress, chain } from './config.js';
+import { userKeypair, userAddress, PoolAddress, chain } from './config.js';
 
 async function main(): Promise<void> {
   // step 1: User selects the pool
-  const poolInfo = await chain.getRawPoolInfoByPoolId(ByrealPoolAddress.POOL_wsolc_bbsolC);
+  const poolInfo = await chain.getRawPoolInfoByPoolId(PoolAddress.USDC_USDT);
 
   console.log('========= step 1: Select the pool =========');
   console.log('Selected pool address:', poolInfo.poolId.toBase58());
 
   // step 2: User inputs the price range
-  const userStartPrice = '0.6';
-  const userEndPrice = '0.8';
+  const userStartPrice = '0.8';
+  const userEndPrice = '0.9';
 
   // Calculate the accurate tick price, and show it to the user
   const priceInTickLower = TickMath.getTickAlignedPriceDetails(
@@ -41,7 +41,7 @@ async function main(): Promise<void> {
 
   // step 3: User inputs the amount of TokenB and the token type
   const base = 'MintB';
-  const baseAmount = new BN(2000000000); // 2
+  const baseAmount = new BN(2 * 10 ** poolInfo.mintDecimalsB);
 
   // Calculate the amount of TokenA needed
   const amountA = chain.getAmountAFromAmountB({

@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 
-import { CLMM_PROGRAM_ID } from '../constants.js';
+import { BYREAL_CLMM_PROGRAM_ID } from '../constants.js';
 import { IPoolLayoutWithId } from '../instructions/models.js';
 
 import { Api, IApiParams } from './apis/index.js';
@@ -22,7 +22,7 @@ export class SdkClient {
   public token: Token;
 
   constructor(params: { connection: Connection; programId?: PublicKey; apiConfig?: IApiParams }) {
-    const { connection, programId = CLMM_PROGRAM_ID, apiConfig } = params;
+    const { connection, programId = BYREAL_CLMM_PROGRAM_ID, apiConfig } = params;
     this.connection = connection;
     this.programId = programId;
     this.api = new Api(apiConfig);

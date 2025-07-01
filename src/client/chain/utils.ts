@@ -9,6 +9,8 @@ import {
   SqrtPriceMath,
   TickMath,
 } from '../../instructions/index.js';
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { Connection, PublicKey } from '@solana/web3.js';
 
 /**
  * Used to round the price to the corresponding tick when creating a position
@@ -379,4 +381,28 @@ export function calculateRangeAprs(params: {
   }
 
   return result;
+}
+
+/**
+ * 获取 mint 对应的 token program ID
+ */
+export async function getTokenProgramId(connection: Connection, mintAddress: PublicKey): Promise<PublicKey> {
+  try {
+    const mintAccountInfo = await connection.getAccountInfo(mintAddress);
+    if (!mintAccountInfo) {
+      throw new Error(`Mint account not found: ${mintAddress.toBase58()}`);
+    }
+
+    // 检查 mint 账户的 owner 来确定使用的是哪个 token program
+    if (mintAccountInfo.owner.equals(TOKEN_2022_PROGRAM_ID)) {
+      return TOKEN_2022_PROGRAM_ID;
+    } else if (mintAccountInfo.owner.equals(TOKEN_PROGRAM_ID)) {
+      return TOKEN_PROGRAM_ID;
+    } else {
+      throw new Error(`Unknown token program for mint: ${mintAddress.toBase58()}`);
+    }
+  } catch (error) {
+    console.warn(`Failed to get token program for ${mintAddress.toBase58()}, defaulting to TOKEN_PROGRAM_ID`);
+    return TOKEN_PROGRAM_ID;
+  }
 }
