@@ -442,4 +442,106 @@ export class Instruction {
       instructions: [instruction],
     };
   }
+
+  static async swapBaseInInstruction(params: {
+    poolInfo: IPoolLayoutWithId;
+    ownerInfo: {
+      wallet: PublicKey;
+      tokenAccountA: PublicKey;
+      tokenAccountB: PublicKey;
+    };
+    amount: BN;
+    otherAmountThreshold: BN;
+    sqrtPriceLimitX64: BN;
+    isInputMintA: boolean;
+    exTickArrayBitmap?: PublicKey;
+    tickArray: PublicKey[];
+  }) {
+    const {
+      poolInfo,
+      ownerInfo,
+      amount,
+      otherAmountThreshold,
+      sqrtPriceLimitX64,
+      exTickArrayBitmap,
+      tickArray,
+      isInputMintA,
+    } = params;
+
+    const instruction = await BaseInstruction.swapInstruction(
+      poolInfo.programId,
+      ownerInfo.wallet,
+      poolInfo.poolId,
+      poolInfo.ammConfig,
+      isInputMintA ? ownerInfo.tokenAccountA : ownerInfo.tokenAccountB,
+      isInputMintA ? ownerInfo.tokenAccountB : ownerInfo.tokenAccountA,
+      isInputMintA ? poolInfo.vaultA : poolInfo.vaultB,
+      isInputMintA ? poolInfo.vaultB : poolInfo.vaultA,
+      isInputMintA ? poolInfo.mintA : poolInfo.mintB,
+      isInputMintA ? poolInfo.mintB : poolInfo.mintA,
+      tickArray,
+      poolInfo.observationId,
+      amount,
+      otherAmountThreshold,
+      sqrtPriceLimitX64,
+      true,
+      exTickArrayBitmap
+    );
+
+    return {
+      instructions: [instruction],
+    };
+  }
+
+  static async swapBaseOutInstruction(params: {
+    poolInfo: IPoolLayoutWithId;
+    ownerInfo: {
+      wallet: PublicKey;
+      tokenAccountA: PublicKey;
+      tokenAccountB: PublicKey;
+    };
+    amount: BN;
+    otherAmountThreshold: BN;
+    sqrtPriceLimitX64: BN;
+    isOutputMintA: boolean;
+    exTickArrayBitmap?: PublicKey;
+    tickArray: PublicKey[];
+  }) {
+    const {
+      poolInfo,
+      ownerInfo,
+      amount,
+      otherAmountThreshold,
+      sqrtPriceLimitX64,
+      exTickArrayBitmap,
+      tickArray,
+      isOutputMintA,
+    } = params;
+
+    // For exact output, input and output are reversed
+    // If output is mintA, then input is mintB
+    const instruction = await BaseInstruction.swapInstruction(
+      poolInfo.programId,
+      ownerInfo.wallet,
+      poolInfo.poolId,
+      poolInfo.ammConfig,
+      isOutputMintA ? ownerInfo.tokenAccountB : ownerInfo.tokenAccountA,
+      isOutputMintA ? ownerInfo.tokenAccountA : ownerInfo.tokenAccountB,
+      isOutputMintA ? poolInfo.vaultB : poolInfo.vaultA,
+      isOutputMintA ? poolInfo.vaultA : poolInfo.vaultB,
+      isOutputMintA ? poolInfo.mintB : poolInfo.mintA,
+      isOutputMintA ? poolInfo.mintA : poolInfo.mintB,
+      tickArray,
+      poolInfo.observationId,
+      amount,
+      otherAmountThreshold,
+      sqrtPriceLimitX64,
+      false, // isBaseInput = false for exact output
+      exTickArrayBitmap
+    );
+
+    return {
+      instructions: [instruction],
+    };
+  }
 }

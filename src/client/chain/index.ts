@@ -3,10 +3,10 @@ import {
   NATIVE_MINT,
   createInitializeAccountInstruction,
   createCloseAccountInstruction,
+  createAssociatedTokenAccountIdempotentInstruction,
   AccountLayout,
   MintLayout,
   TOKEN_2022_PROGRAM_ID,
-  createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import { Connection, PublicKey, VersionedTransaction, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 import BN from 'bn.js';
@@ -27,21 +27,24 @@ import {
   ITokenInfo,
   getPdaMintExAccount,
   getPdaTickArrayAddress,
-} from '../../instructions/index.js';
-import { generatePubKey } from '../../utils/generatePubKey.js';
-import {
-  makeTransaction,
-  sendTransaction,
-  checkV0TxSize,
-  estimateComputeUnits,
-  DEFAULT_COMPUTE_UNIT_PRICE,
-} from '../../utils/index.js';
+  PoolUtils,
+  getTickArrayBitmapExtension,
+  getTickArrayInfo,
+  getPdaExBitmapAccount,
+  MIN_SQRT_PRICE_X64,
+  MAX_SQRT_PRICE_X64,
+} from '../../instructions/index';
+import { generatePubKey } from '../../utils/generatePubKey';
+import { makeTransaction, sendTransaction, estimateComputeUnits, DEFAULT_COMPUTE_UNIT_PRICE } from '../../utils/index';
 
 import {
   IAddLiquidityParams,
   IClosePositionParams,
   ICollectFeesParams,
   ICreatePoolParams,
+  IQuoteSwapExactOutParams,
+  IQuoteSwapExactOutReturn,
+  ISwapExactOutParams,
   ICreatePositionParams,
   IDecreaseFullLiquidityParams,
   IDecreaseLiquidityParams,
@@ -51,15 +54,19 @@ import {
   SignerCallback,
   IGetPositionInfoByNftMintReturn,
   ICalculateCreatePositionFee,
-} from './models.js';
+  IQouteSwapParams,
+  IQouteSwapReturn,
+  ISwapParams,
+} from './models';
 import {
   alignPriceToTickPrice,
   calculateApr,
+  calculateRewardApr,
   calculateRangeAprs,
   getAmountAFromAmountB,
   getAmountBFromAmountA,
   getTokenProgramId,
-} from './utils.js';
+} from './utils';
 
 /*
  * Chain class: Encapsulates chain-level operations related to CLMM (Concentrated Liquidity Market Maker)
@@ -76,7 +83,7 @@ export class Chain {
   /**
    * Constructor
    * @param params.connection Solana chain connection object
-   * @param params.programId CLMM program ID, default is BYREAL_CLMM_PROGRAM_ID
+   * @param params.programId CLMM program ID, default is CLMM_PROGRAM_ID
    */
   constructor(params: { connection: Connection; programId?: PublicKey }) {
     const { connection, programId = BYREAL_CLMM_PROGRAM_ID } = params;
@@ -271,35 +278,13 @@ export class Chain {
     const amountA = base === 'MintA' ? baseAmount : otherAmountMax;
     const amountB = base === 'MintB' ? baseAmount : otherAmountMax;
 
-    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions, tokenProgramIdA, tokenProgramIdB } =
-      await this.handleSolWsol({
-        userAddress,
-        mintA,
-        mintB,
-        amountA,
-        amountB,
-      });
-
-    const ataInstructions: TransactionInstruction[] = [];
-
-    // MintA
-    if (mintA.toBase58() !== NATIVE_MINT.toBase58()) {
-      const accA = await this.connection.getAccountInfo(tokenAccountA);
-      if (!accA) {
-        ataInstructions.push(
-          createAssociatedTokenAccountInstruction(userAddress, tokenAccountA, userAddress, mintA, tokenProgramIdA)
-        );
-      }
-    }
-
-    if (mintB.toBase58() !== NATIVE_MINT.toBase58()) {
-      const accB = await this.connection.getAccountInfo(tokenAccountB);
-      if (!accB) {
-        ataInstructions.push(
-          createAssociatedTokenAccountInstruction(userAddress, tokenAccountB, userAddress, mintB, tokenProgramIdB)
-        );
-      }
-    }
+    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleTokenAccount({
+      userAddress,
+      mintA,
+      mintB,
+      amountA,
+      amountB,
+    });
 
     // Generate position creation instructions
     const { instructions: positionInstructions, signers: positionSigners } =
@@ -321,13 +306,10 @@ export class Chain {
 
     // Merge all instructions: ATA creation → pre → position → end
     const instructions = [
-      ...ataInstructions, // Create ATA if needed (first)
       ...preInstructions, // SOL/WSOL handling
       ...positionInstructions, // Position creation
       ...endInstructions, // Cleanup
     ];
-
-    console.log('instructions ==>', instructions.length);
 
     const signers = [...positionSigners];
 
@@ -408,15 +390,12 @@ export class Chain {
     const isTickArrayLowerExists = !!tickArrayLowerInfo;
     const isTickArrayUpperExists = !!tickArrayUpperInfo;
 
-    // console.log('isTickArrayLowerExists ==>', isTickArrayLowerExists);
-    // console.log('isTickArrayUpperExists ==>', isTickArrayUpperExists);
-
     // Prepare instructions to estimate compute units
     const { mintA, mintB } = poolInfo;
     const amountA = base === 'MintA' ? baseAmount : otherAmountMax;
     const amountB = base === 'MintB' ? baseAmount : otherAmountMax;
 
-    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleSolWsol({
+    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleTokenAccount({
       userAddress,
       mintA,
       mintB,
@@ -424,21 +403,29 @@ export class Chain {
       amountB,
     });
 
-    const { instructions: positionInstructions } = await Instruction.openPositionFromBaseInstruction({
-      poolInfo,
-      ownerInfo: {
-        feePayer: userAddress,
-        wallet: userAddress,
-        tokenAccountA,
-        tokenAccountB,
-      },
-      tickLower,
-      tickUpper,
-      base,
-      baseAmount,
-      otherAmountMax,
-      withMetadata: 'create',
-    });
+    let positionInstructions: TransactionInstruction[] = [];
+
+    // Try to generate position creation instructions
+    try {
+      const { instructions } = await Instruction.openPositionFromBaseInstruction({
+        poolInfo,
+        ownerInfo: {
+          feePayer: userAddress,
+          wallet: userAddress,
+          tokenAccountA,
+          tokenAccountB,
+        },
+        tickLower,
+        tickUpper,
+        base,
+        baseAmount,
+        otherAmountMax,
+        withMetadata: 'create',
+      });
+      positionInstructions = instructions;
+    } catch {
+      // console.error('error ==> ', error);
+    }
 
     // Estimate compute units and transaction fees
     const computeUnits = await estimateComputeUnits(
@@ -499,7 +486,7 @@ export class Chain {
     const mintA = positionInfo.rawPoolInfo.mintA;
     const mintB = positionInfo.rawPoolInfo.mintB;
     // Handle SOL/WSOL packaging
-    const { preInstructions, endInstructions } = await this.handleSolWsol({
+    const { preInstructions, endInstructions } = await this.handleTokenAccount({
       userAddress,
       mintA,
       mintB,
@@ -563,7 +550,7 @@ export class Chain {
     // Get pool information
     const poolInfo = await this.getRawPoolInfoByPoolId(positionInfo.poolId);
     // Handle SOL/WSOL packaging
-    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleSolWsol({
+    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleTokenAccount({
       userAddress,
       mintA: poolInfo.mintA,
       mintB: poolInfo.mintB,
@@ -636,7 +623,7 @@ export class Chain {
     // Get pool information
     const poolInfo = await this.getRawPoolInfoByPoolId(positionInfo.poolId);
     // Handle SOL/WSOL packaging
-    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleSolWsol({
+    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleTokenAccount({
       userAddress,
       mintA: poolInfo.mintA,
       mintB: poolInfo.mintB,
@@ -734,7 +721,7 @@ export class Chain {
     // Cache pool information to avoid duplicate requests
     const poolInfoMap: Map<string, IPoolLayoutWithId> = new Map();
     const allInstructions: TransactionInstruction[][] = [];
-    let currentInstructions: TransactionInstruction[] = [];
+    // let currentInstructions: TransactionInstruction[] = [];
     // Get rent exemption lamports
     const rentExemptLamports = await this.estimateRentFee(AccountLayout.span);
     for (const nftMint of nftMintList) {
@@ -749,7 +736,7 @@ export class Chain {
         const poolInfo = poolInfoMap.get(poolId);
         if (!poolInfo) throw new Error(`Pool not found: ${poolId}`);
         // Handle SOL/WSOL related
-        const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleSolWsol({
+        const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleTokenAccount({
           userAddress,
           mintA: poolInfo.mintA,
           mintB: poolInfo.mintB,
@@ -770,20 +757,21 @@ export class Chain {
         });
         // All instructions for the current NFT
         const nftInstructions = [...preInstructions, ...decreaseInstructions, ...endInstructions];
+
         // Check if adding this NFT's instructions will exceed the transaction size limit
-        const tempInstructions = [...currentInstructions, ...nftInstructions];
-        const isValidSize = checkV0TxSize({
-          instructions: tempInstructions,
-          payer: userAddress,
-        });
-        if (!isValidSize && currentInstructions.length > 0) {
-          // If adding will exceed the limit and there are existing instructions, save the current batch and start a new batch
-          allInstructions.push(currentInstructions);
-          currentInstructions = nftInstructions;
-        } else {
-          // If it doesn't exceed the limit or the current batch is empty, add to the current batch
-          currentInstructions.push(...nftInstructions);
-        }
+        // const tempInstructions = [...currentInstructions, ...nftInstructions];
+        // const isValidSize = checkV0TxSize({
+        //   instructions: tempInstructions,
+        //   payer: userAddress,
+        // });
+        // if (!isValidSize && currentInstructions.length > 0) {
+        // If adding will exceed the limit and there are existing instructions, save the current batch and start a new batch
+        allInstructions.push(nftInstructions);
+        // currentInstructions = nftInstructions;
+        // } else {
+        //   // If it doesn't exceed the limit or the current batch is empty, add to the current batch
+        //   currentInstructions.push(...nftInstructions);
+        // }
       } catch (error) {
         console.error('[collectAllPositionFeesInstructions] Collect position fees failed:', {
           nftMint: nftMint.toBase58(),
@@ -792,9 +780,9 @@ export class Chain {
       }
     }
     // Ensure the last batch of instructions is also added
-    if (currentInstructions.length > 0) {
-      allInstructions.push(currentInstructions);
-    }
+    // if (currentInstructions.length > 0) {
+    //   allInstructions.push(currentInstructions);
+    // }
     // Create a transaction for each batch of instructions
     const transactions: VersionedTransaction[] = [];
     for (const instructions of allInstructions) {
@@ -847,7 +835,7 @@ export class Chain {
     const amountA = base === 'MintA' ? baseAmount : otherAmountMax;
     const amountB = base === 'MintB' ? baseAmount : otherAmountMax;
     // Handle SOL/WSOL packaging
-    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleSolWsol({
+    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleTokenAccount({
       userAddress,
       mintA: poolInfo.mintA,
       mintB: poolInfo.mintB,
@@ -904,7 +892,7 @@ export class Chain {
    * @returns IInstructionReturn
    */
   public async createPoolInstructions(params: ICreatePoolParams): Promise<IInstructionReturn> {
-    const { userAddress, poolManager, mintA, mintB, ammConfigId, initialPrice } = params;
+    const { userAddress, poolManager, openTime, mintA, mintB, ammConfigId, initialPrice } = params;
     // Convert price to BN format
     const initialPriceDecimal = new Decimal(initialPrice);
     const initialPriceX64 = SqrtPriceMath.priceToSqrtPriceX64(initialPriceDecimal, mintA.decimals, mintB.decimals);
@@ -919,6 +907,7 @@ export class Chain {
     if (mintB.programId === TOKEN_2022_PROGRAM_ID.toBase58()) {
       fetchAccounts.push(getPdaMintExAccount(this.programId, mintBAddress).publicKey);
     }
+
     // Verify account existence
     if (fetchAccounts.length > 0) {
       const extMintRes = await this.connection.getMultipleAccountsInfo(fetchAccounts);
@@ -926,6 +915,7 @@ export class Chain {
         if (r) extendMintAccount.push(fetchAccounts[idx]);
       });
     }
+
     // Generate pool creation instructions
     const { instructions } = await Instruction.createPoolInstruction({
       programId: this.programId,
@@ -935,6 +925,7 @@ export class Chain {
       mintB,
       ammConfigId,
       initialPriceX64,
+      openTime,
       extendMintAccount,
     });
     // Construct transaction object
@@ -963,8 +954,277 @@ export class Chain {
     });
   }
 
+  public async qouteSwap(params: IQouteSwapParams): Promise<IQouteSwapReturn> {
+    // Slippage is set to 2% by default
+    const {
+      poolInfo,
+      inputTokenMint,
+      amountIn,
+      priceLimit = new Decimal(0),
+      slippage = 0.02,
+      catchLiquidityInsufficient,
+    } = params;
+
+    let sqrtPriceLimitX64: BN;
+    const isInputMintA = inputTokenMint.toBase58() === poolInfo.mintA.toBase58();
+
+    // TODO: Consider fee calculation for token2022 in the future
+
+    if (priceLimit.equals(new Decimal(0))) {
+      sqrtPriceLimitX64 = isInputMintA ? MIN_SQRT_PRICE_X64.add(new BN(1)) : MAX_SQRT_PRICE_X64.sub(new BN(1));
+    } else {
+      sqrtPriceLimitX64 = SqrtPriceMath.priceToSqrtPriceX64(priceLimit, poolInfo.mintDecimalsA, poolInfo.mintDecimalsB);
+    }
+
+    const exBitmapInfo = await getTickArrayBitmapExtension(this.programId, poolInfo.poolId, this.connection);
+
+    const ammConfig = await RawDataUtils.getRawAmmConfigByConfigId({
+      connection: this.connection,
+      configId: poolInfo.ammConfig,
+    });
+
+    const tickArrayInfo = await getTickArrayInfo({
+      connection: this.connection,
+      poolInfo,
+      exBitmapInfo,
+    });
+
+    if (!exBitmapInfo || !ammConfig) throw new Error('Failed to get tick array bitmap extension or amm config');
+
+    const { allTrade, expectedAmountOut, remainingAccounts, executionPrice, feeAmount } =
+      await PoolUtils.getOutputAmountAndRemainAccounts({
+        poolInfo,
+        exBitmapInfo,
+        ammConfig,
+        tickArrayInfo,
+        inputTokenMint,
+        inputAmount: amountIn,
+        sqrtPriceLimitX64,
+        catchLiquidityInsufficient,
+      });
+
+    const minAmountOut = expectedAmountOut
+      .mul(new BN(Math.floor((1 - slippage) * 10000000000)))
+      .div(new BN(10000000000));
+
+    return {
+      allTrade,
+      isInputMintA,
+      amountIn,
+      expectedAmountOut,
+      minAmountOut,
+      remainingAccounts,
+      executionPrice,
+      feeAmount,
+    };
+  }
+
+  public async swapInstructions(params: ISwapParams): Promise<IInstructionReturn> {
+    const { poolInfo, quoteReturn, userAddress } = params;
+
+    // Determine amounts based on which token is input
+    const amountA = quoteReturn.isInputMintA ? quoteReturn.amountIn : new BN(0);
+    const amountB = !quoteReturn.isInputMintA ? quoteReturn.amountIn : new BN(0);
+
+    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleTokenAccount({
+      userAddress,
+      mintA: poolInfo.mintA,
+      mintB: poolInfo.mintB,
+      amountA,
+      amountB,
+    });
+
+    const exBitmapAddress = getPdaExBitmapAccount(poolInfo.programId, poolInfo.poolId).publicKey;
+
+    // quoteReturn.isBaseIn
+    const { instructions: swapInstruction } = await Instruction.swapBaseInInstruction({
+      poolInfo,
+      ownerInfo: {
+        wallet: userAddress,
+        tokenAccountA,
+        tokenAccountB,
+      },
+      amount: quoteReturn.amountIn,
+      // The minimum output amount after slippage calculation is passed here
+      otherAmountThreshold: quoteReturn.minAmountOut,
+      sqrtPriceLimitX64: quoteReturn.executionPrice,
+      isInputMintA: quoteReturn.isInputMintA,
+      tickArray: quoteReturn.remainingAccounts,
+      exTickArrayBitmap: exBitmapAddress,
+    });
+
+    const instructions = [...preInstructions, ...swapInstruction, ...endInstructions];
+
+    const transaction = await makeTransaction({
+      connection: this.connection,
+      payerPublicKey: userAddress,
+      instructions,
+    });
+
+    return {
+      transaction,
+      instructions,
+    };
+  }
+
+  /**
+   * Create swap exact out instructions
+   * @param params Contains pool info, quote return, and user address
+   * @returns IInstructionReturn
+   */
+  public async swapExactOutInstructions(params: {
+    poolInfo: IPoolLayoutWithId;
+    quoteReturn: IQuoteSwapExactOutReturn;
+    userAddress: PublicKey;
+  }): Promise<IInstructionReturn> {
+    const { poolInfo, quoteReturn, userAddress } = params;
+
+    // For exact output, we need to determine input amounts
+    // If outputting tokenA, we input tokenB
+    // If outputting tokenB, we input tokenA
+    const isInputMintA = !quoteReturn.isOutputMintA;
+    const amountA = isInputMintA ? quoteReturn.maxAmountIn : new BN(0);
+    const amountB = !isInputMintA ? quoteReturn.maxAmountIn : new BN(0);
+
+    const { tokenAccountA, tokenAccountB, preInstructions, endInstructions } = await this.handleTokenAccount({
+      userAddress,
+      mintA: poolInfo.mintA,
+      mintB: poolInfo.mintB,
+      amountA,
+      amountB,
+    });
+
+    const exBitmapAddress = getPdaExBitmapAccount(poolInfo.programId, poolInfo.poolId).publicKey;
+
+    // For exact output, we need to use swapBaseOutInstruction
+    const { instructions: swapInstruction } = await Instruction.swapBaseOutInstruction({
+      poolInfo,
+      ownerInfo: {
+        wallet: userAddress,
+        tokenAccountA,
+        tokenAccountB,
+      },
+      amount: quoteReturn.amountOut,
+      // The maximum input amount (including slippage) is passed here
+      otherAmountThreshold: quoteReturn.maxAmountIn,
+      sqrtPriceLimitX64: quoteReturn.executionPrice,
+      isOutputMintA: quoteReturn.isOutputMintA,
+      tickArray: quoteReturn.remainingAccounts,
+      exTickArrayBitmap: exBitmapAddress,
+    });
+
+    const instructions = [...preInstructions, ...swapInstruction, ...endInstructions];
+
+    const transaction = await makeTransaction({
+      connection: this.connection,
+      payerPublicKey: userAddress,
+      instructions,
+    });
+
+    return {
+      transaction,
+      instructions,
+    };
+  }
+
+  public async swap(params: ParamsWithSignerCallback<ISwapParams>): Promise<string> {
+    const { signerCallback } = params;
+    const { transaction } = await this.swapInstructions(params);
+    return sendTransaction({
+      connection: this.connection,
+      signTx: () => signerCallback(transaction),
+    });
+  }
+
+  /**
+   * Execute swap exact out transaction
+   * @param params Contains signature callback, etc.
+   * @returns Promise<string> Transaction signature
+   */
+  public async swapExactOut(params: ParamsWithSignerCallback<ISwapExactOutParams>): Promise<string> {
+    const { signerCallback } = params;
+    const { transaction } = await this.swapExactOutInstructions(params);
+    return sendTransaction({
+      connection: this.connection,
+      signTx: () => signerCallback(transaction),
+    });
+  }
+
+  /**
+   * Quote swap exact output - calculate required input amount for desired output
+   * @param params Quote parameters including output amount and slippage
+   * @returns Quote result with expected input amount and other swap details
+   */
+  public async quoteSwapExactOut(params: IQuoteSwapExactOutParams): Promise<IQuoteSwapExactOutReturn> {
+    const {
+      poolInfo,
+      outputTokenMint,
+      amountOut,
+      priceLimit = new Decimal(0),
+      slippage = 0.02,
+      catchLiquidityInsufficient,
+    } = params;
+
+    let sqrtPriceLimitX64: BN;
+    const isOutputMintA = outputTokenMint.toBase58() === poolInfo.mintA.toBase58();
+
+    // For exact output, we need to determine if we're inputting token A or B
+    // If outputting A, we input B (zeroForOne = false)
+    // If outputting B, we input A (zeroForOne = true)
+    const zeroForOne = !isOutputMintA;
+
+    if (priceLimit.equals(new Decimal(0))) {
+      sqrtPriceLimitX64 = zeroForOne ? MIN_SQRT_PRICE_X64.add(new BN(1)) : MAX_SQRT_PRICE_X64.sub(new BN(1));
+    } else {
+      sqrtPriceLimitX64 = SqrtPriceMath.priceToSqrtPriceX64(priceLimit, poolInfo.mintDecimalsA, poolInfo.mintDecimalsB);
+    }
+
+    const exBitmapInfo = await getTickArrayBitmapExtension(this.programId, poolInfo.poolId, this.connection);
+
+    const ammConfig = await RawDataUtils.getRawAmmConfigByConfigId({
+      connection: this.connection,
+      configId: poolInfo.ammConfig,
+    });
+
+    const tickArrayInfo = await getTickArrayInfo({
+      connection: this.connection,
+      poolInfo,
+      exBitmapInfo,
+    });
+
+    if (!exBitmapInfo || !ammConfig) throw new Error('Failed to get tick array bitmap extension or amm config');
+
+    const { allTrade, expectedAmountIn, remainingAccounts, executionPrice, feeAmount } =
+      await PoolUtils.getInputAmountAndRemainAccounts({
+        poolInfo,
+        exBitmapInfo,
+        ammConfig,
+        tickArrayInfo,
+        outputTokenMint,
+        outputAmount: amountOut,
+        sqrtPriceLimitX64,
+        catchLiquidityInsufficient,
+      });
+
+    // For exact output, we calculate max input amount with slippage
+    // This is the maximum amount user is willing to pay
+    const maxAmountIn = expectedAmountIn.mul(new BN(Math.ceil((1 + slippage) * 10000000000))).div(new BN(10000000000));
+
+    return {
+      allTrade,
+      isOutputMintA,
+      amountOut,
+      expectedAmountIn,
+      maxAmountIn,
+      remainingAccounts,
+      executionPrice,
+      feeAmount,
+    };
+  }
+
   /**
    * Handle SOL/WSOL packaging logic, automatically generate related instructions
+   *
    * @param params.userAddress User wallet address
    * @param params.mintA Pool tokenA mint
    * @param params.mintB Pool tokenB mint
@@ -973,7 +1233,7 @@ export class Chain {
    * @param params.rentExemptLamports Optional, WSOL account rent exemption lamports
    * @returns tokenAccountA/B, pre-instructions, post-instructions
    */
-  private async handleSolWsol(params: {
+  private async handleTokenAccount(params: {
     userAddress: PublicKey;
     mintA: PublicKey;
     mintB: PublicKey;
@@ -999,7 +1259,37 @@ export class Chain {
     let tokenAccountB = getATAAddress(userAddress, mintB, tokenProgramIdB).publicKey;
     const preInstructions: TransactionInstruction[] = [];
     const endInstructions: TransactionInstruction[] = [];
-    // If there is no SOL involved, return directly
+
+    if (!isTokenASOL) {
+      const accA = await this.connection.getAccountInfo(tokenAccountA);
+      if (!accA) {
+        preInstructions.push(
+          createAssociatedTokenAccountIdempotentInstruction(
+            userAddress,
+            tokenAccountA,
+            userAddress,
+            mintA,
+            tokenProgramIdA
+          )
+        );
+      }
+    }
+
+    if (!isTokenBSOL) {
+      const accB = await this.connection.getAccountInfo(tokenAccountB);
+      if (!accB) {
+        preInstructions.push(
+          createAssociatedTokenAccountIdempotentInstruction(
+            userAddress,
+            tokenAccountB,
+            userAddress,
+            mintB,
+            tokenProgramIdB
+          )
+        );
+      }
+    }
+
     if (!isTokenASOL && !isTokenBSOL) {
       return { tokenAccountA, tokenAccountB, preInstructions, endInstructions, tokenProgramIdA, tokenProgramIdB };
     }
@@ -1018,6 +1308,7 @@ export class Chain {
       } else if (isTokenBSOL && amountB) {
         amountNeeded = amountB.toNumber();
       }
+
       // Create WSOL account
       preInstructions.push(
         SystemProgram.createAccountWithSeed({
@@ -1055,6 +1346,7 @@ export class Chain {
   }
 
   public calculateApr = calculateApr;
+  public calculateRewardApr = calculateRewardApr;
   public calculateRangeAprs = calculateRangeAprs;
   public alignPriceToTickPrice = alignPriceToTickPrice;
   public getAmountBFromAmountA = getAmountBFromAmountA;

@@ -21,3 +21,6 @@ export * from './tick.js';
 export * from './tickarrayBitmap.js';
 export * from './transfer.js';
 export * from './position.js';
+export * from './getTickArrayInfo.js';
+export * from './swapMath.js';
+export * from './getTickArrayBitmapExtension.js';

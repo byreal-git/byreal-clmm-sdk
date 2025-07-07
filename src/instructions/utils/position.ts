@@ -8,8 +8,8 @@ import { IPersonalPositionLayout, IPoolLayout } from '../layout.js';
 import { LiquidityMath } from './liquidityMath.js';
 import { MathUtils } from './mathUtils.js';
 import { SqrtPriceMath } from './sqrtPriceMath.js';
-import { Tick } from './tick.js';
 import { getTransferAmountFee, minExpirationTime } from './transfer.js';
+import { Tick } from './models.js';
 
 export interface GetTransferAmountFee {
   amount: BN;

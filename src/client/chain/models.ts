@@ -2,7 +2,12 @@ import { PublicKey, Signer, TransactionInstruction, VersionedTransaction } from 
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import { IPersonalPositionLayout, IPoolLayoutWithId, ITokenInfo } from '../../instructions/index.js';
+import {
+  IPersonalPositionLayout,
+  IPoolLayoutWithId,
+  ITokenInfo,
+  TickArrayBitmapExtensionType,
+} from '../../instructions/index.js';
 import { IMakeTransactionOptions } from '../../utils/index.js';
 
 export type SignerCallback = (transaction: VersionedTransaction) => Promise<VersionedTransaction>;
@@ -64,6 +69,7 @@ export interface ICreatePoolParams {
   mintB: ITokenInfo;
   ammConfigId: PublicKey;
   initialPrice: number;
+  openTime?: BN;
   computeBudgetOptions?: IComputeBudgetOptions;
 }
 
@@ -117,3 +123,55 @@ export type IComputeBudgetOptions =
   | { maxFee: number; exactFee?: never; computeUnitPrice?: number }
   | { maxFee?: never; exactFee: number; computeUnitPrice?: never }
   | { maxFee?: undefined; exactFee?: undefined; computeUnitPrice?: number };
+
+export interface IQouteSwapParams {
+  poolInfo: IPoolLayoutWithId;
+  inputTokenMint: PublicKey;
+  amountIn: BN;
+  slippage?: number;
+  priceLimit?: Decimal;
+  catchLiquidityInsufficient?: boolean;
+}
+
+export interface IQouteSwapReturn {
+  allTrade: boolean;
+  amountIn: BN;
+  isInputMintA: boolean;
+  expectedAmountOut: BN;
+  minAmountOut: BN;
+  remainingAccounts: PublicKey[];
+  executionPrice: BN;
+  feeAmount: BN;
+}
+
+export interface ISwapParams {
+  poolInfo: IPoolLayoutWithId;
+  userAddress: PublicKey;
+  quoteReturn: IQouteSwapReturn;
+}
+
+export interface ISwapExactOutParams {
+  poolInfo: IPoolLayoutWithId;
+  userAddress: PublicKey;
+  quoteReturn: IQuoteSwapExactOutReturn;
+}
+
+export interface IQuoteSwapExactOutParams {
+  poolInfo: IPoolLayoutWithId;
+  outputTokenMint: PublicKey;
+  amountOut: BN;
+  slippage?: number;
+  priceLimit?: Decimal;
+  catchLiquidityInsufficient?: boolean;
+}
+
+export interface IQuoteSwapExactOutReturn {
+  allTrade: boolean;
+  amountOut: BN;
+  isOutputMintA: boolean;
+  expectedAmountIn: BN;
+  maxAmountIn: BN;
+  remainingAccounts: PublicKey[];
+  executionPrice: BN;
+  feeAmount: BN;
+}

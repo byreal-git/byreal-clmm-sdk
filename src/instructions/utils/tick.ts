@@ -8,49 +8,9 @@ import { IPoolLayout } from '../layout.js';
 import { TickArrayBitmapExtensionType } from '../models.js';
 import { getPdaTickArrayAddress } from '../pda.js';
 
+import { ReturnTypeGetPriceAndTick, Tick, TickArray, TickArrayState, TickState } from './models.js';
 import { SqrtPriceMath } from './sqrtPriceMath.js';
 import { TickMath } from './tickMath.js';
-
-export interface ReturnTypeGetPriceAndTick {
-  tick: number;
-  price: Decimal;
-}
-
-export type Tick = {
-  tick: number;
-  liquidityNet: BN;
-  liquidityGross: BN;
-  feeGrowthOutsideX64A: BN;
-  feeGrowthOutsideX64B: BN;
-  rewardGrowthsOutsideX64: BN[];
-};
-
-export type TickArray = {
-  address: PublicKey;
-  poolId: PublicKey;
-  startTickIndex: number;
-  ticks: Tick[];
-  initializedTickCount: number;
-};
-
-export type TickState = {
-  tick: number;
-  liquidityNet: BN;
-  liquidityGross: BN;
-  feeGrowthOutsideX64A: BN;
-  feeGrowthOutsideX64B: BN;
-  tickCumulativeOutside: BN;
-  secondsPerLiquidityOutsideX64: BN;
-  secondsOutside: number;
-  rewardGrowthsOutside: BN[];
-};
-
-export type TickArrayState = {
-  ammPool: PublicKey;
-  startTickIndex: number;
-  ticks: TickState[];
-  initializedTickCount: number;
-};
 
 export class TickUtils {
   // Calculate the address of the TickArray corresponding to the given tick index
@@ -143,9 +103,21 @@ export class TickUtils {
   }
 
   /**
-   * Search for initialized TickArrays around the current position, finding the start indices of a specified number of initialized TickArrays
+   * Search for initialized TickArrays around the current position to find the starting indices of a specified number of initialized TickArrays
    *
-   * Used to locate active liquidity near the current price
+   * @param tickArrayBitmap - Main tick array bitmap used to mark initialized tick arrays
+   * @param exTickArrayBitmap - Extended tick array bitmap containing positive and negative direction extension bitmap information
+   * @param tickSpacing - Tick spacing
+   * @param tickArrayStartIndex - Starting tick array index for the search
+   * @param expectedCount - Expected number of initialized TickArrays to find
+   *
+   * @returns Array of initialized TickArray starting indices
+   *
+   * @description
+   * This function is used to locate active liquidity around the current price. It searches on both sides of the given starting position:
+   * - Search right (higher tick positions)
+   * - Search left (lower tick positions)
+   * By combining the search results from both directions, it provides the liquidity distribution around the current price
    */
   public static getInitializedTickArrayInRange(
     tickArrayBitmap: BN[],
