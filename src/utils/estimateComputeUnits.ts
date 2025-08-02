@@ -1,4 +1,5 @@
 import {
+  ComputeBudgetProgram,
   Connection,
   PublicKey,
   TransactionInstruction,
@@ -9,7 +10,9 @@ import {
 /**
  * Estimate compute units required for a transaction
  * @param connection - Solana connection instance
- * @param transaction - Transaction to estimate
+ * @param instructions - Instructions to estimate
+ * @param payerPublicKey - Payer public key
+ * @param _blockhash - Optional blockhash
  * @returns Estimated compute unit count
  */
 export async function estimateComputeUnits(
@@ -19,28 +22,40 @@ export async function estimateComputeUnits(
   _blockhash?: string
 ): Promise<number> {
   try {
-    // Create a transaction without compute budget instructions for simulation
     const blockhash = _blockhash || (await connection.getLatestBlockhash()).blockhash;
+
+    const filteredInstructions = instructions.filter((ix) => {
+      if (!ix.programId.equals(ComputeBudgetProgram.programId)) {
+        return true;
+      }
+
+      const instructionType = ix.data[0];
+      return instructionType !== 2; // Keep if not setComputeUnitLimit
+    });
+
+    const simulationInstructions = [
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 }), // Max CU limit
+      ...filteredInstructions,
+    ];
 
     const messageV0 = new TransactionMessage({
       payerKey: payerPublicKey,
       recentBlockhash: blockhash,
-      instructions,
+      instructions: simulationInstructions,
     }).compileToV0Message();
 
     const simulationTx = new VersionedTransaction(messageV0);
 
-    // Simulate transaction execution
+    // Simulate transaction execution with max CU limit
     const simulation = await connection.simulateTransaction(simulationTx);
 
-    // Extract compute units used from simulation result
     if (simulation.value.logs && simulation.value.unitsConsumed) {
-      // Get actual consumed CU
       const consumedUnits = simulation.value.unitsConsumed;
 
+      // Calculate final CU limit with safety margin
       const estimatedUnits = Math.min(
         Math.max(
-          consumedUnits + 100_000, // 100k buffer
+          consumedUnits + 100_000, // 100k buffer for safety
           Math.ceil(consumedUnits * 1.3) // 30% buffer
         ),
         1_400_000 // Solana transaction max CU limit
@@ -49,7 +64,6 @@ export async function estimateComputeUnits(
       return Math.max(estimatedUnits, 100_000); // Ensure at least 100k CU
     }
 
-    // If unable to get accurate estimate, use default value
     return 400_000;
   } catch (error) {
     console.warn('Estimate compute units failed, using default value:', error);

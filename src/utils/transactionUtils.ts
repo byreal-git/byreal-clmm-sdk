@@ -84,13 +84,13 @@ export async function makeTransaction(params: {
 
   const { blockhash } = await connection.getLatestBlockhash();
 
-  const finalInstructions = [...instructions];
+  const finalInstructions: TransactionInstruction[] = [];
 
   if (addComputeBudget) {
     const computeUnitLimit =
       options.computeUnitLimit || (await estimateComputeUnits(connection, instructions, payerPublicKey, blockhash));
 
-    console.info(`计算单元限制: ${computeUnitLimit}`);
+    console.info(`Compute unit limit: ${computeUnitLimit}`);
 
     // If maxFee is set, check if computeUnitPrice needs to be adjusted
     let finalComputeUnitPrice = computeUnitPrice;
@@ -107,7 +107,7 @@ export async function makeTransaction(params: {
         finalComputeUnitPrice = Math.floor(maxFeeInMicroLamports / computeUnitLimit);
         console.info(`Adjust compute unit price to meet maximum fee limit: ${finalComputeUnitPrice} microLamports`);
       }
-    } else if (exactFee) {
+    } else if (typeof exactFee === 'number') {
       // Convert exactFee from SOL to microLamports
       const exactFeeInMicroLamports = exactFee * 1_000_000_000_000_000;
       // Compute unit price = exact fee / compute unit limit
@@ -119,6 +119,9 @@ export async function makeTransaction(params: {
       ComputeBudgetProgram.setComputeUnitPrice({ microLamports: finalComputeUnitPrice })
     );
   }
+
+  // Add other instructions after compute budget
+  finalInstructions.push(...instructions);
 
   // Create transaction message
   const transactionMessage = new TransactionMessage({
@@ -143,7 +146,7 @@ export async function makeTransaction(params: {
  * @param connection - Solana connection instance
  * @param signTx - Method for signing transactions, usually calling the signTransaction method of the plugin wallet and signing with the new Keypair created by the program
  * @param options - Transaction options
- * @returns 交易哈希
+ * @returns Transaction hash
  */
 export async function sendTransaction(params: {
   connection: Connection;
@@ -172,30 +175,76 @@ export async function sendTransaction(params: {
 
   console.info(`Transaction sent: ${txid}`);
 
-  // Manually poll for transaction confirmation
+  try {
+    // Solution 1: Use connection.confirmTransaction
+    await connection.confirmTransaction(txid, 'confirmed');
+    console.info(`Transaction confirmed: ${txid}`);
+  } catch (err: any) {
+    console.warn(`Transaction confirmation failed, falling back to polling: ${err.message}`);
+
+    // Solution 2: If confirmTransaction fails, fallback to optimized polling
+    const confirmed = await confirmTransactionWithOptimizedPolling(connection, txid, {
+      confirmationTimeout,
+      confirmationRetryInterval,
+      confirmationRetries,
+    });
+
+    if (!confirmed) {
+      console.warn(`Transaction may not be confirmed: ${txid}`);
+    }
+  }
+
+  return txid;
+}
+
+/**
+ * Optimized polling confirmation method - as a fallback solution
+ */
+async function confirmTransactionWithOptimizedPolling(
+  connection: Connection,
+  txid: string,
+  options: {
+    confirmationTimeout: number;
+    confirmationRetryInterval: number;
+    confirmationRetries: number;
+  }
+): Promise<boolean> {
+  const { confirmationTimeout, confirmationRetryInterval, confirmationRetries } = options;
+
   const startTime = Date.now();
   let confirmed = false;
   let retries = confirmationRetries;
 
+  // Use exponential backoff algorithm to reduce RPC call frequency
+  let currentInterval = confirmationRetryInterval;
+  const maxInterval = 5000; // Maximum interval 5 seconds
+  const backoffMultiplier = 1.5;
+
   while (!confirmed && retries > 0 && Date.now() - startTime < confirmationTimeout) {
     try {
-      const status = await connection.getSignatureStatus(txid);
-      if (status && status.value && status.value.confirmationStatus === 'confirmed') {
+      // Use getSignatureStatuses for batch query (if there are multiple transactions to query together)
+      const statuses = await connection.getSignatureStatuses([txid]);
+      const status = statuses.value[0];
+
+      if (status && status.confirmationStatus === 'confirmed') {
         confirmed = true;
+      } else if (status && status.err) {
+        // If transaction failed, exit immediately
+        console.error(`Transaction failed: ${JSON.stringify(status.err)}`);
+        break;
       } else {
-        await new Promise((resolve) => setTimeout(resolve, confirmationRetryInterval));
+        // Exponential backoff: gradually increase polling interval
+        await new Promise((resolve) => setTimeout(resolve, currentInterval));
+        currentInterval = Math.min(currentInterval * backoffMultiplier, maxInterval);
         retries--;
       }
     } catch (err: any) {
       console.warn(`Failed to check transaction status, reason: ${err.message}`);
       retries--;
-      await new Promise((resolve) => setTimeout(resolve, confirmationRetryInterval));
+      await new Promise((resolve) => setTimeout(resolve, currentInterval));
+      currentInterval = Math.min(currentInterval * backoffMultiplier, maxInterval);
     }
   }
 
-  if (!confirmed) {
-    console.warn(`Transaction may not be confirmed: ${txid}`);
-  }
-
-  return txid;
+  return confirmed;
 }
