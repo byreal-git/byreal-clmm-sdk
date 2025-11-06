@@ -24,3 +24,5 @@ export * from './position.js';
 export * from './getTickArrayInfo.js';
 export * from './swapMath.js';
 export * from './getTickArrayBitmapExtension.js';
+export * from './tickArrayUtils.js';
+export * from './models.js';

@@ -25,10 +25,13 @@ export const AmmConfigLayout = struct([
   blob(8),
   u8('bump'),
   u16('index'),
-  publicKey(''),
+  publicKey('owner'),
   u32('protocolFeeRate'),
   u32('tradeFeeRate'),
   u16('tickSpacing'),
+  u32('fundFeeRate'),
+  u32('padding'),
+  publicKey('fundOwner'),
 ]);
 
 export type IAmmConfigLayout = ReturnType<typeof AmmConfigLayout.decode>;
@@ -108,6 +111,20 @@ export const PoolLayout = struct([
   u64('totalFeesClaimedTokenA'),
   u64('totalFeesTokenB'),
   u64('totalFeesClaimedTokenB'),
+
+  u64('fundFeesTokenA'),
+  u64('fundFeesTokenB'),
+
+  u64('openTime'),
+  u64('recentEpoch'),
+
+  u8('decayFeeFlag'),
+  u8('decayFeeInitFeeRate'),
+  u8('decayFeeDecreaseRate'),
+  u8('decayFeeDecreaseInterval'),
+  seq(u8(), 4, 'padding1_1'),
+  seq(u64(), 23, 'padding1'),
+  seq(u64(), 32, 'padding2'),
 ]);
 
 export type IPoolLayout = ReturnType<typeof PoolLayout.decode>;
@@ -160,25 +177,56 @@ export const ProtocolPositionLayout = struct([
  *
  * @example https://solscan.io/account/4vGLPwfohNUd2o4NwZPMx7q8AH98DQ9Eth5tS1p8dew1#anchorData
  */
+/**
+ * @description TickState layout (168 bytes)
+ */
+export const TickStateLayout = struct([
+  s32('tick'),
+  i128('liquidityNet'),
+  u128('liquidityGross'),
+  u128('feeGrowthOutsideX64A'),
+  u128('feeGrowthOutsideX64B'),
+  seq(u128(), 3, 'rewardGrowthsOutsideX64'),
+  seq(u32(), 13, ''),
+]);
+
+export type ITickStateLayout = ReturnType<typeof TickStateLayout.decode>;
+
 export const TickArrayLayout = struct([
   blob(8),
   publicKey('poolId'),
   s32('startTickIndex'),
-  seq(
-    struct([
-      s32('tick'),
-      i128('liquidityNet'),
-      u128('liquidityGross'),
-      u128('feeGrowthOutsideX64A'),
-      u128('feeGrowthOutsideX64B'),
-      seq(u128(), 3, 'rewardGrowthsOutsideX64'),
-      seq(u32(), 13, ''),
-    ]),
-    TICK_ARRAY_SIZE,
-    'ticks'
-  ),
+  seq(TickStateLayout, TICK_ARRAY_SIZE, 'ticks'),
   u8('initializedTickCount'),
 ]);
+
+export type ITickArrayLayout = ReturnType<typeof TickArrayLayout.decode>;
+
+/**
+ * @description Dynamic Tick Array layout
+ *
+ * Dynamic tick arrays use a sparse storage model with a mapping table (tick_offset_index)
+ * to track which logical tick positions have allocated TickStates.
+ * This allows for more efficient memory usage compared to fixed tick arrays.
+ *
+ * Struct size: 208 bytes (32+4+4+60+1+1+2+8+96)
+ * Header size: 216 bytes (8 discriminator + 208 struct)
+ * Followed by dynamic number of TickStates (max 60, each 168 bytes)
+ */
+export const DynTickArrayLayout = struct([
+  blob(8), // discriminator (8 bytes)
+  publicKey('poolId'), // 32 bytes
+  s32('startTickIndex'), // 4 bytes
+  blob(4, 'padding0'), // 4 bytes
+  seq(u8(), TICK_ARRAY_SIZE, 'tickOffsetIndex'), // 60 bytes - Mapping table: offset -> physical position + 1
+  u8('allocTickCount'), // 1 byte - Number of allocated ticks
+  u8('initializedTickCount'), // 1 byte - Number of initialized ticks
+  blob(2, 'padding1'), // 2 bytes
+  u64('recentEpoch'), // 8 bytes
+  blob(96, 'padding2'), // 96 bytes
+]);
+
+export type IDynTickArrayLayout = ReturnType<typeof DynTickArrayLayout.decode>;
 
 /**
  * @description Price tick array bitmap extension layout

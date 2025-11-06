@@ -15,7 +15,7 @@ import { getPdaTickArrayAddress } from '../pda.js';
 
 import { LiquidityMath } from './liquidityMath.js';
 import { MathUtils } from './mathUtils.js';
-import { StepComputations, Tick, TickArray, TickArrayBitmapExtensionType } from './models.js';
+import { StepComputations, Tick, TickArrayContainer, TickArrayBitmapExtensionType } from './models.js';
 import { PoolUtils } from './poolUtils.js';
 import { SqrtPriceMath } from './sqrtPriceMath.js';
 import { TickQuery, TickUtils } from './tick.js';
@@ -60,7 +60,7 @@ export abstract class SwapMath {
   public static swapCompute(
     programId: PublicKey,
     poolId: PublicKey,
-    tickArrayInfo: { [key: string]: TickArray },
+    tickArrayInfo: { [key: string]: TickArrayContainer },
     tickArrayBitmap: BN[],
     tickarrayBitmapExtension: TickArrayBitmapExtensionType,
     zeroForOne: boolean,
@@ -131,7 +131,7 @@ export abstract class SwapMath {
     }
 
     let loopCount = 0;
-    let t = !zeroForOne && tickArrayCurrent.startTickIndex === state.tick;
+    let t = !zeroForOne && tickArrayCurrent.data.startTickIndex === state.tick;
     while (
       !state.amountSpecifiedRemaining.eq(ZERO) &&
       !state.sqrtPriceX64.eq(sqrtPriceLimitX64)
@@ -250,11 +250,11 @@ export abstract class SwapMath {
           state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
         }
 
-        t = step.tickNext != state.tick && !zeroForOne && tickArrayCurrent.startTickIndex === step.tickNext;
+        t = step.tickNext != state.tick && !zeroForOne && tickArrayCurrent.data.startTickIndex === step.tickNext;
         state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext; //
       } else if (state.sqrtPriceX64 != step.sqrtPriceStartX64) {
         const _T = SqrtPriceMath.getTickFromSqrtPriceX64(state.sqrtPriceX64);
-        t = _T != state.tick && !zeroForOne && tickArrayCurrent.startTickIndex === _T;
+        t = _T != state.tick && !zeroForOne && tickArrayCurrent.data.startTickIndex === _T;
         state.tick = _T;
       }
       ++loopCount;

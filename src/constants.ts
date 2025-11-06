@@ -8,6 +8,14 @@ export const TICK_ARRAY_BITMAP_SIZE = 512;
 // Size of extended tick array bitmap, used to handle additional liquidity ranges
 export const EXTENSION_TICKARRAY_BITMAP_SIZE = 14;
 
+// Dynamic Tick Array constants
+// Struct length: 208 bytes
+// Header length: 8 (discriminator) + 208 (struct) = 216 bytes
+export const DYN_TICK_ARRAY_STRUCT_LEN = 208;
+export const DYN_TICK_ARRAY_HEADER_LEN = 216;
+// TickState size: 168 bytes
+export const TICK_STATE_LEN = 168;
+
 export const U64_IGNORE_RANGE = new BN('18446744073700000000');
 
 export const BYREAL_CLMM_PROGRAM_ID = new PublicKey('REALQqNEomY6cQGZJUGwywTBD2UmDT32rZcNnfxQ5N2');

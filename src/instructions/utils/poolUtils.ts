@@ -6,7 +6,7 @@ import { IAmmConfigLayout } from '../layout.js';
 import { IPoolLayoutWithId } from '../models.js';
 import { getPdaTickArrayAddress } from '../pda.js';
 
-import { TickArray, TickArrayBitmapExtensionType } from './models.js';
+import { TickArrayContainer, TickArrayBitmapExtensionType } from './models.js';
 import { SwapMath } from './swapMath.js';
 import { TickQuery, TickUtils } from './tick.js';
 import { TickArrayBitmap, TickArrayBitmapExtensionUtils } from './tickarrayBitmap.js';
@@ -75,7 +75,8 @@ export class PoolUtils {
     lastTickArrayStartIndex: number,
     zeroForOne: boolean
   ): { isExist: boolean; nextStartIndex: number } {
-    lastTickArrayStartIndex = TickQuery.getArrayStartIndex(poolInfo.tickCurrent, poolInfo.tickSpacing);
+    // Start scanning from the provided lastTickArrayStartIndex instead of recomputing from tickCurrent
+    // This avoids skipping the immediate adjacent array when tickCurrent happens to equal a start index.
 
     while (true) {
       const { isInit: startIsInit, tickIndex: startIndex } = TickArrayBitmap.nextInitializedTickArrayStartIndex(
@@ -187,7 +188,7 @@ export class PoolUtils {
     poolInfo: IPoolLayoutWithId;
     exBitmapInfo: TickArrayBitmapExtensionType;
     ammConfig: IAmmConfigLayout;
-    tickArrayInfo: { [key: string]: TickArray };
+    tickArrayInfo: { [key: string]: TickArrayContainer };
     inputTokenMint: PublicKey;
     inputAmount: BN;
     sqrtPriceLimitX64?: BN;
@@ -313,7 +314,7 @@ export class PoolUtils {
     poolInfo: IPoolLayoutWithId;
     exBitmapInfo: TickArrayBitmapExtensionType;
     ammConfig: IAmmConfigLayout;
-    tickArrayInfo: { [key: string]: TickArray };
+    tickArrayInfo: { [key: string]: TickArrayContainer };
     outputTokenMint: PublicKey;
     outputAmount: BN;
     sqrtPriceLimitX64?: BN;
