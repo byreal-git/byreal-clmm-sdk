@@ -33,6 +33,8 @@ import {
   getPdaExBitmapAccount,
   MIN_SQRT_PRICE_X64,
   MAX_SQRT_PRICE_X64,
+  TickArrayUtils,
+  TickArrayContainer,
 } from '../../instructions/index';
 import { generatePubKey } from '../../utils/generatePubKey';
 import { makeTransaction, sendTransaction, estimateComputeUnits, DEFAULT_COMPUTE_UNIT_PRICE } from '../../utils/index';
@@ -216,14 +218,29 @@ export class Chain {
     // Get the tickArray data
     const tickArrayRes = await this.connection.getMultipleAccountsInfo([tickLowerArrayAddress, tickUpperArrayAddress]);
     if (!tickArrayRes[0] || !tickArrayRes[1]) throw new Error('tick data not found');
-    const tickArrayLower = TickArrayLayout.decode(tickArrayRes[0].data);
-    const tickArrayUpper = TickArrayLayout.decode(tickArrayRes[1].data);
-    // Get the tick state
-    const tickLowerState =
-      tickArrayLower.ticks[TickUtils.getTickOffsetInArray(rawPositionInfo.tickLower, rawPoolInfo.tickSpacing)];
-    const tickUpperState =
-      tickArrayUpper.ticks[TickUtils.getTickOffsetInArray(rawPositionInfo.tickUpper, rawPoolInfo.tickSpacing)];
-    // Calculate the fee
+
+    // Parse as containers (supports both fixed and dynamic tick arrays)
+    const tickArrayLowerContainer = TickArrayUtils.parseTickArrayContainer(tickArrayRes[0].data, tickLowerArrayAddress);
+    const tickArrayUpperContainer = TickArrayUtils.parseTickArrayContainer(tickArrayRes[1].data, tickUpperArrayAddress);
+
+    // Get the tick state using container helper
+    const tickLowerState = TickArrayUtils.getTickStateFromContainer(
+      tickArrayLowerContainer,
+      rawPositionInfo.tickLower,
+      rawPoolInfo.tickSpacing
+    );
+    const tickUpperState = TickArrayUtils.getTickStateFromContainer(
+      tickArrayUpperContainer,
+      rawPositionInfo.tickUpper,
+      rawPoolInfo.tickSpacing
+    );
+
+    // Validate tick states
+    if (!tickLowerState || !tickUpperState) {
+      throw new Error('Tick state not found in tick array');
+    }
+
+    // Calculate the fee (original logic unchanged)
     const tokenFees = PositionUtils.getPositionFees(rawPoolInfo, rawPositionInfo, tickLowerState, tickUpperState);
     // Filter out abnormal fees
     const [tokenFeeAmountA, tokenFeeAmountB] = [

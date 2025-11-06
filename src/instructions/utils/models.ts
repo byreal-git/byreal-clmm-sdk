@@ -24,6 +24,42 @@ export type TickArray = {
   initializedTickCount: number;
 };
 
+/**
+ * Dynamic Tick Array type
+ * Uses sparse storage with a mapping table to track allocated tick positions
+ */
+export type DynTickArray = {
+  address: PublicKey;
+  poolId: PublicKey;
+  startTickIndex: number;
+  tickOffsetIndex: number[]; // Mapping table: tickOffsetIndex[offset] = position + 1 (0 = unallocated)
+  allocTickCount: number; // Number of allocated ticks
+  initializedTickCount: number; // Number of initialized ticks
+  ticks: Tick[]; // Dynamic array of tick states (length = allocTickCount)
+};
+
+/**
+ * Unified Tick Array Container
+ * Discriminated union to handle both fixed and dynamic tick arrays
+ */
+export type TickArrayContainer = { type: 'Fixed'; data: TickArray } | { type: 'Dynamic'; data: DynTickArray };
+
+/**
+ * Type guard to check if a container is a fixed tick array
+ */
+export function isFixedTickArray(container: TickArrayContainer): container is { type: 'Fixed'; data: TickArray } {
+  return container.type === 'Fixed';
+}
+
+/**
+ * Type guard to check if a container is a dynamic tick array
+ */
+export function isDynamicTickArray(
+  container: TickArrayContainer
+): container is { type: 'Dynamic'; data: DynTickArray } {
+  return container.type === 'Dynamic';
+}
+
 export type TickState = {
   tick: number;
   liquidityNet: BN;

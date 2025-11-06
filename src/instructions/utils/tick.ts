@@ -6,9 +6,18 @@ import { TICK_ARRAY_SIZE, TICK_ARRAY_BITMAP_SIZE } from '../../constants.js';
 import { MAX_TICK, MIN_TICK } from '../constants.js';
 import { IPoolLayout } from '../layout.js';
 import { TickArrayBitmapExtensionType } from '../models.js';
+import { TickArrayBitmapExtensionUtils } from './tickarrayBitmap.js';
 import { getPdaTickArrayAddress } from '../pda.js';
 
-import { ReturnTypeGetPriceAndTick, Tick, TickArray, TickArrayState, TickState } from './models.js';
+import {
+  ReturnTypeGetPriceAndTick,
+  Tick,
+  TickArray,
+  TickArrayState,
+  TickState,
+  TickArrayContainer,
+  DynTickArray,
+} from './models.js';
 import { SqrtPriceMath } from './sqrtPriceMath.js';
 import { TickMath } from './tickMath.js';
 
@@ -272,32 +281,50 @@ export class TickUtils {
   /**
    * Get the next initialized Tick
    * Used to locate active liquidity near the current price
+   * Now supports both fixed and dynamic tick arrays through the container pattern
    */
   public static nextInitTick(
-    tickArrayCurrent: TickArray,
+    tickArrayCurrent: TickArrayContainer,
+    currentTickIndex: number,
+    tickSpacing: number,
+    zeroForOne: boolean,
+    t: boolean
+  ): Tick | null {
+    if (tickArrayCurrent.type === 'Fixed') {
+      return this._nextInitTickFixed(tickArrayCurrent.data, currentTickIndex, tickSpacing, zeroForOne, t);
+    } else {
+      return this._nextInitTickDynamic(tickArrayCurrent.data, currentTickIndex, tickSpacing, zeroForOne, t);
+    }
+  }
+
+  /**
+   * Fixed tick array implementation (original logic)
+   */
+  private static _nextInitTickFixed(
+    tickArray: TickArray,
     currentTickIndex: number,
     tickSpacing: number,
     zeroForOne: boolean,
     t: boolean
   ): Tick | null {
     const currentTickArrayStartIndex = TickQuery.getArrayStartIndex(currentTickIndex, tickSpacing);
-    if (currentTickArrayStartIndex != tickArrayCurrent.startTickIndex) {
+    if (currentTickArrayStartIndex != tickArray.startTickIndex) {
       return null;
     }
-    let offsetInArray = Math.floor((currentTickIndex - tickArrayCurrent.startTickIndex) / tickSpacing);
+    let offsetInArray = Math.floor((currentTickIndex - tickArray.startTickIndex) / tickSpacing);
 
     if (zeroForOne) {
       while (offsetInArray >= 0) {
-        if (tickArrayCurrent.ticks[offsetInArray].liquidityGross.gtn(0)) {
-          return tickArrayCurrent.ticks[offsetInArray];
+        if (tickArray.ticks[offsetInArray].liquidityGross.gtn(0)) {
+          return tickArray.ticks[offsetInArray];
         }
         offsetInArray = offsetInArray - 1;
       }
     } else {
       if (!t) offsetInArray = offsetInArray + 1;
       while (offsetInArray < TICK_ARRAY_SIZE) {
-        if (tickArrayCurrent.ticks[offsetInArray].liquidityGross.gtn(0)) {
-          return tickArrayCurrent.ticks[offsetInArray];
+        if (tickArray.ticks[offsetInArray].liquidityGross.gtn(0)) {
+          return tickArray.ticks[offsetInArray];
         }
         offsetInArray = offsetInArray + 1;
       }
@@ -306,28 +333,132 @@ export class TickUtils {
   }
 
   /**
-   * Find the first initialized Tick in the given TickArray, where "first" is defined based on the trading direction (zeroForOne)
+   * Dynamic tick array implementation
+   * Uses the mapping table (tickOffsetIndex) to find allocated ticks
    */
-  public static firstInitializedTick(tickArrayCurrent: TickArray, zeroForOne: boolean): Tick {
+  private static _nextInitTickDynamic(
+    dynTickArray: DynTickArray,
+    currentTickIndex: number,
+    tickSpacing: number,
+    zeroForOne: boolean,
+    t: boolean
+  ): Tick | null {
+    const currentTickArrayStartIndex = TickQuery.getArrayStartIndex(currentTickIndex, tickSpacing);
+    if (currentTickArrayStartIndex !== dynTickArray.startTickIndex) {
+      return null;
+    }
+
+    let offsetInArray = Math.floor((currentTickIndex - dynTickArray.startTickIndex) / tickSpacing);
+
+    if (zeroForOne) {
+      while (offsetInArray >= 0) {
+        // Check mapping table
+        const physicalIndex = dynTickArray.tickOffsetIndex[offsetInArray];
+
+        if (physicalIndex > 0) {
+          const tick = dynTickArray.ticks[physicalIndex - 1];
+          if (tick.liquidityGross.gtn(0)) {
+            return tick;
+          }
+        }
+
+        offsetInArray = offsetInArray - 1;
+      }
+    } else {
+      if (!t) offsetInArray = offsetInArray + 1;
+
+      while (offsetInArray < TICK_ARRAY_SIZE) {
+        const physicalIndex = dynTickArray.tickOffsetIndex[offsetInArray];
+
+        if (physicalIndex > 0) {
+          const tick = dynTickArray.ticks[physicalIndex - 1];
+          if (tick.liquidityGross.gtn(0)) {
+            return tick;
+          }
+        }
+
+        offsetInArray = offsetInArray + 1;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Find the first initialized Tick in the given TickArray, where "first" is defined based on the trading direction (zeroForOne)
+   * Now supports both fixed and dynamic tick arrays through the container pattern
+   */
+  public static firstInitializedTick(tickArrayCurrent: TickArrayContainer, zeroForOne: boolean): Tick {
+    if (tickArrayCurrent.type === 'Fixed') {
+      return this._firstInitializedTickFixed(tickArrayCurrent.data, zeroForOne);
+    } else {
+      return this._firstInitializedTickDynamic(tickArrayCurrent.data, zeroForOne);
+    }
+  }
+
+  /**
+   * Fixed tick array implementation (original logic)
+   */
+  private static _firstInitializedTickFixed(tickArray: TickArray, zeroForOne: boolean): Tick {
     if (zeroForOne) {
       let i = TICK_ARRAY_SIZE - 1;
       while (i >= 0) {
-        if (tickArrayCurrent.ticks[i].liquidityGross.gtn(0)) {
-          return tickArrayCurrent.ticks[i];
+        if (tickArray.ticks[i].liquidityGross.gtn(0)) {
+          return tickArray.ticks[i];
         }
         i = i - 1;
       }
     } else {
       let i = 0;
       while (i < TICK_ARRAY_SIZE) {
-        if (tickArrayCurrent.ticks[i].liquidityGross.gtn(0)) {
-          return tickArrayCurrent.ticks[i];
+        if (tickArray.ticks[i].liquidityGross.gtn(0)) {
+          return tickArray.ticks[i];
         }
         i = i + 1;
       }
     }
 
-    throw Error(`firstInitializedTick check error: ${tickArrayCurrent} - ${zeroForOne}`);
+    throw Error(`firstInitializedTick check error: ${tickArray} - ${zeroForOne}`);
+  }
+
+  /**
+   * Dynamic tick array implementation
+   * Uses the mapping table (tickOffsetIndex) to find the first allocated tick
+   */
+  private static _firstInitializedTickDynamic(dynTickArray: DynTickArray, zeroForOne: boolean): Tick {
+    if (zeroForOne) {
+      // Search from right to left (highest tick index first)
+      let i = TICK_ARRAY_SIZE - 1;
+      while (i >= 0) {
+        const physicalIndex = dynTickArray.tickOffsetIndex[i];
+
+        if (physicalIndex > 0) {
+          const tick = dynTickArray.ticks[physicalIndex - 1];
+          if (tick.liquidityGross.gtn(0)) {
+            return tick;
+          }
+        }
+
+        i = i - 1;
+      }
+    } else {
+      // Search from left to right (lowest tick index first)
+      let i = 0;
+      while (i < TICK_ARRAY_SIZE) {
+        const physicalIndex = dynTickArray.tickOffsetIndex[i];
+
+        if (physicalIndex > 0) {
+          const tick = dynTickArray.ticks[physicalIndex - 1];
+          if (tick.liquidityGross.gtn(0)) {
+            return tick;
+          }
+        }
+
+        i = i + 1;
+      }
+    }
+
+    throw Error(`firstInitializedTick check error: ${dynTickArray} - ${zeroForOne}`);
   }
 
   public static getPriceAndTick({
@@ -379,7 +510,28 @@ export class TickQuery {
     isExist: boolean;
     nextStartIndex: number;
   } {
-    const currentOffset = Math.floor(tickIndex / TickQuery.tickCount(tickSpacing));
+    // First, include the array that contains tickIndex itself if initialized (handles boundary inclusively)
+    const startIndex = TickQuery.getArrayStartIndex(tickIndex, tickSpacing);
+    const merged = TickUtils.mergeTickArrayBitmap(tickArrayBitmap);
+    try {
+      const { isInitialized } = TickUtils.checkTickArrayIsInitialized(merged, startIndex, tickSpacing);
+      if (isInitialized) return { isExist: true, nextStartIndex: startIndex };
+    } catch {
+      /* ignore */
+    }
+    try {
+      const { isInitialized } = TickArrayBitmapExtensionUtils.checkTickArrayIsInit(
+        startIndex,
+        tickSpacing,
+        exBitmapInfo
+      );
+      if (isInitialized) return { isExist: true, nextStartIndex: startIndex };
+    } catch {
+      /* ignore */
+    }
+
+    // Otherwise, search outward in the given direction
+    const currentOffset = TickUtils.getTickArrayBitIndex(tickIndex, tickSpacing);
     const result: number[] = zeroForOne
       ? TickUtils.searchLowBitFromStart(tickArrayBitmap, exBitmapInfo, currentOffset - 1, 1, tickSpacing)
       : TickUtils.searchHightBitFromStart(tickArrayBitmap, exBitmapInfo, currentOffset + 1, 1, tickSpacing);
