@@ -2,9 +2,9 @@ import BN from 'bn.js';
 
 import { TICK_ARRAY_BITMAP_SIZE, TICK_ARRAY_SIZE } from '../../constants.js';
 import { MAX_TICK, MIN_TICK } from '../constants.js';
-import { TickArrayBitmapExtensionType } from '../models.js';
 
 import { isZero, leadingZeros, leastSignificantBit, mostSignificantBit, trailingZeros } from './binaryUtils.js';
+import { TickArrayBitmapExtensionType } from './models.js';
 import { TickUtils, TickQuery } from './tick.js';
 
 export class TickArrayBitmap {

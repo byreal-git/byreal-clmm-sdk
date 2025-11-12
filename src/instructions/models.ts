@@ -10,13 +10,6 @@ export interface IGetTransferAmountFee {
   expirationTime: number | undefined;
 }
 
-// Bitmap extension type
-export interface TickArrayBitmapExtensionType {
-  poolId: PublicKey;
-  positiveTickArrayBitmap: BN[][];
-  negativeTickArrayBitmap: BN[][];
-}
-
 // Transfer fee configuration
 export interface TransferFeeDataBaseType {
   transferFeeConfigAuthority: string;

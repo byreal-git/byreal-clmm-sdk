@@ -2,10 +2,10 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 
 import { TickArrayLayout } from '../layout.js';
-import { IPoolLayoutWithId, TickArrayBitmapExtensionType } from '../models.js';
+import { IPoolLayoutWithId } from '../models.js';
 import { getPdaTickArrayAddress } from '../pda.js';
 
-import { TickArrayContainer } from './models';
+import { TickArrayContainer, TickArrayBitmapExtensionType } from './models';
 import { TickUtils } from './tick.js';
 import { TickArrayUtils } from './tickArrayUtils.js';
 

@@ -5,7 +5,6 @@ import { Decimal } from 'decimal.js';
 import { TICK_ARRAY_SIZE, TICK_ARRAY_BITMAP_SIZE } from '../../constants.js';
 import { MAX_TICK, MIN_TICK } from '../constants.js';
 import { IPoolLayout } from '../layout.js';
-import { TickArrayBitmapExtensionType } from '../models.js';
 import { TickArrayBitmapExtensionUtils } from './tickarrayBitmap.js';
 import { getPdaTickArrayAddress } from '../pda.js';
 
@@ -13,6 +12,7 @@ import {
   ReturnTypeGetPriceAndTick,
   Tick,
   TickArray,
+  TickArrayBitmapExtensionType,
   TickArrayState,
   TickState,
   TickArrayContainer,
