@@ -12,14 +12,13 @@ import { Connection, PublicKey, VersionedTransaction, SystemProgram, Transaction
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import { BYREAL_CLMM_PROGRAM_ID, U64_IGNORE_RANGE } from '../../constants.js';
+import { BYREAL_CLMM_PROGRAM_ID, U64_IGNORE_RANGE } from '../constants.js';
 import {
   IPoolLayoutWithId,
   IPersonalPositionLayout,
   PositionUtils,
   RawDataUtils,
   SqrtPriceMath,
-  TickArrayLayout,
   TickMath,
   TickUtils,
   Instruction,
@@ -34,10 +33,9 @@ import {
   MIN_SQRT_PRICE_X64,
   MAX_SQRT_PRICE_X64,
   TickArrayUtils,
-  TickArrayContainer,
-} from '../../instructions/index';
-import { generatePubKey } from '../../utils/generatePubKey';
-import { makeTransaction, sendTransaction, estimateComputeUnits, DEFAULT_COMPUTE_UNIT_PRICE } from '../../utils/index';
+} from '../instructions/index';
+import { generatePubKey } from '../utils/generatePubKey';
+import { makeTransaction, sendTransaction, estimateComputeUnits, DEFAULT_COMPUTE_UNIT_PRICE } from '../utils/index';
 
 import {
   IAddLiquidityParams,
@@ -1250,7 +1248,7 @@ export class Chain {
    * @param params.rentExemptLamports Optional, WSOL account rent exemption lamports
    * @returns tokenAccountA/B, pre-instructions, post-instructions
    */
-  private async handleTokenAccount(params: {
+  public async handleTokenAccount(params: {
     userAddress: PublicKey;
     mintA: PublicKey;
     mintB: PublicKey;

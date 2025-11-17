@@ -37,6 +37,8 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Local documentation (not for version control)
+NPM_PUBLISH.md
 
 test-output
 

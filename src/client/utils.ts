@@ -8,7 +8,7 @@ import {
   PoolUtils,
   SqrtPriceMath,
   TickMath,
-} from '../../instructions/index.js';
+} from '../instructions/index.js';
 import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Connection, PublicKey } from '@solana/web3.js';
 

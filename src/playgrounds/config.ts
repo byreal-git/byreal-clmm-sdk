@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { SignerCallback } from '../client/chain/models.js';
+import { SignerCallback } from '../client/models.js';
 import { Chain } from '../client/index.js';
 import { BYREAL_CLMM_PROGRAM_ID } from '../constants.js';
 

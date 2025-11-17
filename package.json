@@ -1,37 +1,61 @@
 {
   "name": "@byreal/clmm-sdk",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Byreal CLMM SDK for Solana",
+  "license": "MIT",
+  "author": "Byreal",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/byreal-git/byreal-clmm-sdk.git"
+  },
+  "keywords": [
+    "solana",
+    "clmm",
+    "concentrated-liquidity",
+    "defi",
+    "dex",
+    "amm",
+    "sdk"
+  ],
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "development": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/esm/index.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "test": "vitest",
-    "build": "tsc"
+    "clean": "rm -rf dist",
+    "build:esm": "tsc",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs",
+    "prepublishOnly": "npm run build",
+    "test": "vitest"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
     "@noble/hashes": "^1.8.0",
     "@solana/buffer-layout": "^4.0.1",
-    "@solana/spl-token": "^0.4.13",
-    "@solana/web3.js": "^1.98.2",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
     "bn.js": "^5.2.1",
     "bs58": "^6.0.0",
     "decimal.js": "^10.5.0",
+    "lodash-es": "^4.17.21"
+  },
+  "devDependencies": {
     "dotenv": "^16.5.0",
-    "ky": "^1.8.1",
-    "lodash-es": "^4.17.21",
-    "tslib": "^2.3.0",
     "typescript": "~5.7.2",
     "vitest": "^3.0.9"
   }

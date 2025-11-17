@@ -3,14 +3,30 @@
     "types": ["node"],
     "typeRoots": ["./node_modules/@types"],
     "lib": ["es2022"],
-    "module": "commonjs",
-    "outDir": "./dist",
+    "module": "ES2022",
+    "outDir": "./dist/esm",
     "target": "es2022",
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "strict": false,         
-    "noImplicitAny": false,  
-    "skipLibCheck": true    
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+
+    // Generate type declaration files
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+
+    // Better ESM compatibility
+    "isolatedModules": true
   },
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/playgrounds"
+  ]
 }

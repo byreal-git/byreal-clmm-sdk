@@ -2,13 +2,8 @@ import { PublicKey, Signer, TransactionInstruction, VersionedTransaction } from 
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import {
-  IPersonalPositionLayout,
-  IPoolLayoutWithId,
-  ITokenInfo,
-  TickArrayBitmapExtensionType,
-} from '../../instructions/index.js';
-import { IMakeTransactionOptions } from '../../utils/index.js';
+import { IPersonalPositionLayout, IPoolLayoutWithId, ITokenInfo } from '../instructions/index.js';
+import { IMakeTransactionOptions } from '../utils/index.js';
 
 export type SignerCallback = (transaction: VersionedTransaction) => Promise<VersionedTransaction>;
 

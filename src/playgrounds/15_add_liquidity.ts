@@ -6,7 +6,7 @@ import { PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import { SignerCallback } from '../client/chain/models.js';
+import { SignerCallback } from '../client/models.js';
 
 import { chain, userKeypair, userAddress } from './config.js';
 

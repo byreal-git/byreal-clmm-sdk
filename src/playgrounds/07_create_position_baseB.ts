@@ -5,7 +5,7 @@
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import { SignerCallback } from '../client/chain/models.js';
+import { SignerCallback } from '../client/models.js';
 import { TickMath } from '../index.js';
 
 import { userKeypair, userAddress, PoolAddress, chain } from './config.js';
