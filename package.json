@@ -1,5 +1,5 @@
 {
-  "name": "@byreal/clmm-sdk",
+  "name": "byreal-clmm-sdk-alpha",
   "version": "0.1.0",
   "description": "Byreal CLMM SDK for Solana",
   "license": "MIT",
