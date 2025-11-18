@@ -19,6 +19,7 @@ export const TICK_STATE_LEN = 168;
 export const U64_IGNORE_RANGE = new BN('18446744073700000000');
 
 export const BYREAL_CLMM_PROGRAM_ID = new PublicKey('REALQqNEomY6cQGZJUGwywTBD2UmDT32rZcNnfxQ5N2');
+export const BYREAL_CLMM_PROGRAM_ID_TEST = new PublicKey('45iBNkaENereLKMjLm2LHkF3hpDapf6mnvrM5HWFg9cY');
 
 export const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
 export const RENT_PROGRAM_ID = new PublicKey('SysvarRent111111111111111111111111111111111');

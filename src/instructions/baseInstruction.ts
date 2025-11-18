@@ -5,7 +5,7 @@ import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey, TransactionInstruction, Connection, clusterApiUrl } from '@solana/web3.js';
 import BN from 'bn.js';
 
-import { BYREAL_CLMM_PROGRAM_ID } from '../constants.js';
+import { BYREAL_CLMM_PROGRAM_ID, BYREAL_CLMM_PROGRAM_ID_TEST } from '../constants.js';
 
 import ByrealClmmIDL from './target/idl/byreal_amm_v3.json';
 import { ByrealClmm } from './target/types/byreal_amm_v3.js';
@@ -19,6 +19,10 @@ export const getAmmV3Program = (programId: PublicKey): Program<ByrealClmm> => {
   );
 
   if (programId.toBase58() === BYREAL_CLMM_PROGRAM_ID.toBase58()) {
+    return new Program<ByrealClmm>(ByrealClmmIDL as any, provider);
+  }
+
+  if (programId.toBase58() === BYREAL_CLMM_PROGRAM_ID_TEST.toBase58()) {
     return new Program<ByrealClmm>(ByrealClmmIDL as any, provider);
   }
 
