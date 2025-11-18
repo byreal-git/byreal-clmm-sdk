@@ -8,6 +8,7 @@ import BN from 'bn.js';
 import { BYREAL_CLMM_PROGRAM_ID, BYREAL_CLMM_PROGRAM_ID_TEST } from '../constants.js';
 
 import ByrealClmmIDL from './target/idl/byreal_amm_v3.json';
+import ByrealClmmTestIDL from './target/idl/byreal_amm_v3_test.json';
 import { ByrealClmm } from './target/types/byreal_amm_v3.js';
 
 export const getAmmV3Program = (programId: PublicKey): Program<ByrealClmm> => {
@@ -23,7 +24,7 @@ export const getAmmV3Program = (programId: PublicKey): Program<ByrealClmm> => {
   }
 
   if (programId.toBase58() === BYREAL_CLMM_PROGRAM_ID_TEST.toBase58()) {
-    return new Program<ByrealClmm>(ByrealClmmIDL as any, provider);
+    return new Program<ByrealClmm>(ByrealClmmTestIDL as any, provider);
   }
 
   throw new Error('[getAmmV3Program error]: Invalid program id');
