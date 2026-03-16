@@ -4,7 +4,7 @@
 
 import { PublicKey } from '@solana/web3.js';
 
-import { makeTransaction, sendTransaction } from '../index.js';
+import { makeTransaction, sendTransaction } from '@byreal-io/byreal-clmm-sdk';
 
 import { connection, chain, userAddress, signerCallback } from './config.js';
 

@@ -6,7 +6,7 @@ import { PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import { LiquidityMath, SqrtPriceMath } from '../index.js';
+import { LiquidityMath, SqrtPriceMath } from '@byreal-io/byreal-clmm-sdk';
 
 import { chain } from './config.js';
 

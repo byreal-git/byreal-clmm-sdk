@@ -5,8 +5,7 @@
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import { SignerCallback } from '../client/models.js';
-import { TickMath } from '../index.js';
+import { SignerCallback, TickMath } from '@byreal-io/byreal-clmm-sdk';
 
 import { userKeypair, userAddress, PoolAddress, chain } from './config.js';
 

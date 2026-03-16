@@ -4,11 +4,9 @@ import { Connection, Keypair, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import bs58 from 'bs58';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-import { SignerCallback } from '../client/models.js';
-import { Chain } from '../client/index.js';
-import { BYREAL_CLMM_PROGRAM_ID } from '../constants.js';
+import { SignerCallback, Chain, BYREAL_CLMM_PROGRAM_ID } from '@byreal-io/byreal-clmm-sdk';
 
 const endpoint = process.env.SOL_ENDPOINT || clusterApiUrl('mainnet-beta');
 const secretKey = process.env.SOL_SECRET_KEY;

@@ -5,11 +5,11 @@ Solana concentrated liquidity market maker SDK for Byreal protocol.
 ## Installation
 
 ```bash
-npm install @byreal/clmm-sdk
+npm install @byreal-io/byreal-clmm-sdk
 # or
-yarn add @byreal/clmm-sdk
+yarn add @byreal-io/byreal-clmm-sdk
 # or
-pnpm add @byreal/clmm-sdk
+pnpm add @byreal-io/byreal-clmm-sdk
 ```
 
 ## Quick Start
@@ -18,7 +18,7 @@ pnpm add @byreal/clmm-sdk
 
 ```typescript
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
-import { Chain, BYREAL_CLMM_PROGRAM_ID } from '@byreal/clmm-sdk';
+import { Chain, BYREAL_CLMM_PROGRAM_ID } from '@byreal-io/byreal-clmm-sdk';
 
 // Setup connection
 const connection = new Connection('https://api.mainnet-beta.solana.com');
@@ -76,7 +76,7 @@ Create a new liquidity position within a specific price range.
 ```typescript
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
-import { TickMath } from '@byreal/clmm-sdk';
+import { TickMath } from '@byreal-io/byreal-clmm-sdk';
 
 // Step 1: Get pool info
 const poolId = new PublicKey('your-pool-address');
@@ -244,7 +244,7 @@ console.log('Swap executed:', txid);
 ### Price and Tick Conversions
 
 ```typescript
-import { TickMath, SqrtPriceMath } from '@byreal/clmm-sdk';
+import { TickMath, SqrtPriceMath } from '@byreal-io/byreal-clmm-sdk';
 import { Decimal } from 'decimal.js';
 
 // Align price to valid tick
@@ -258,7 +258,7 @@ const price = TickMath.getPriceFromTick(tick, decimalsA, decimalsB);
 const tick = SqrtPriceMath.getTickFromPrice(price, decimalsA, decimalsB);
 
 // Get position PDA from NFT mint
-import { getPdaPersonalPositionAddress } from '@byreal/clmm-sdk';
+import { getPdaPersonalPositionAddress } from '@byreal-io/byreal-clmm-sdk';
 
 const { publicKey: positionPda } = getPdaPersonalPositionAddress(programId, nftMint);
 ```
@@ -312,7 +312,7 @@ interface SwapQuoteReturn {
 
 ## Examples
 
-More examples are available in the [playgrounds](./src/playgrounds) directory:
+More examples are available in the [examples](./examples) directory:
 
 - Position management: `07_create_position_*.ts`, `15_add_liquidity.ts`
 - Liquidity removal: `08_decrease_liquidity.ts`, `13_decrease_full_liquidity.ts`

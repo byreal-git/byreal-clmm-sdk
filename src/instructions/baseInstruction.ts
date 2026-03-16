@@ -7,8 +7,8 @@ import BN from 'bn.js';
 
 import { BYREAL_CLMM_PROGRAM_ID, BYREAL_CLMM_PROGRAM_ID_TEST } from '../constants.js';
 
-import ByrealClmmIDL from './target/idl/byreal_amm_v3.json';
-import ByrealClmmTestIDL from './target/idl/byreal_amm_v3_test.json';
+import ByrealClmmIDL from './target/idl/byreal_amm_v3.json' with { type: 'json' };
+import ByrealClmmTestIDL from './target/idl/byreal_amm_v3_test.json' with { type: 'json' };
 import { ByrealClmm } from './target/types/byreal_amm_v3.js';
 
 export const getAmmV3Program = (programId: PublicKey): Program<ByrealClmm> => {

@@ -33,9 +33,9 @@ import {
   MIN_SQRT_PRICE_X64,
   MAX_SQRT_PRICE_X64,
   TickArrayUtils,
-} from '../instructions/index';
-import { generatePubKey } from '../utils/generatePubKey';
-import { makeTransaction, sendTransaction, estimateComputeUnits, DEFAULT_COMPUTE_UNIT_PRICE } from '../utils/index';
+} from '../instructions/index.js';
+import { generatePubKey } from '../utils/generatePubKey.js';
+import { makeTransaction, sendTransaction, estimateComputeUnits, DEFAULT_COMPUTE_UNIT_PRICE } from '../utils/index.js';
 
 import {
   IAddLiquidityParams,
@@ -57,7 +57,7 @@ import {
   IQouteSwapParams,
   IQouteSwapReturn,
   ISwapParams,
-} from './models';
+} from './models.js';
 import {
   alignPriceToTickPrice,
   calculateApr,
@@ -66,7 +66,7 @@ import {
   getAmountAFromAmountB,
   getAmountBFromAmountA,
   getTokenProgramId,
-} from './utils';
+} from './utils.js';
 
 /*
  * Chain class: Encapsulates chain-level operations related to CLMM (Concentrated Liquidity Market Maker)

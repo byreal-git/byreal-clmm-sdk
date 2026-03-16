@@ -1,9 +1,11 @@
 {
-  "name": "byreal-clmm-sdk-alpha",
-  "version": "0.1.4",
+  "name": "@byreal-io/byreal-clmm-sdk",
+  "version": "0.1.0",
   "description": "Byreal CLMM SDK for Solana",
+  "type": "module",
   "license": "MIT",
-  "author": "Byreal",
+  "author": "Byreal Team (https://github.com/byreal-git)",
+  "homepage": "https://github.com/byreal-git/byreal-clmm-sdk",
   "repository": {
     "type": "git",
     "url": "https://github.com/byreal-git/byreal-clmm-sdk.git"
@@ -17,15 +19,13 @@
     "amm",
     "sdk"
   ],
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
+  "main": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
       "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
       "default": "./dist/esm/index.js"
     }
   },
@@ -34,12 +34,17 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "clean": "rm -rf dist",
-    "build:esm": "tsc",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build": "npm run clean && npm run build:esm && npm run build:cjs",
+    "build": "npm run clean && tsc",
     "prepublishOnly": "npm run build",
+    "postversion": "git push && git push --tags",
     "test": "vitest"
   },
   "dependencies": {

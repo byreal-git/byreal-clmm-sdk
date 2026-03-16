@@ -3,7 +3,7 @@
     "types": ["node"],
     "typeRoots": ["./node_modules/@types"],
     "lib": ["es2022"],
-    "module": "ES2022",
+    "module": "ESNext",
     "outDir": "./dist/esm",
     "target": "es2022",
     "esModuleInterop": true,
@@ -27,6 +27,6 @@
     "dist",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "src/playgrounds"
+    "examples"
   ]
 }

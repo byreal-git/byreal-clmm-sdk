@@ -5,8 +5,7 @@
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import { SignerCallback } from '../client/models.js';
-import { TickMath } from '../index.js';
+import { SignerCallback, TickMath } from '@byreal-io/byreal-clmm-sdk';
 
 import { userKeypair, userAddress, PoolAddress, chain } from './config.js';
 
@@ -18,8 +17,8 @@ async function main(): Promise<void> {
   console.log('Selected pool address:', poolInfo.poolId.toBase58());
 
   // step 2: User inputs the price range
-  const userStartPrice = '0.998';
-  const userEndPrice = '1.002';
+  const userStartPrice = '0.8';
+  const userEndPrice = '0.9';
 
   // Calculate the accurate tick price, and show it to the user
   const priceInTickLower = TickMath.getTickAlignedPriceDetails(

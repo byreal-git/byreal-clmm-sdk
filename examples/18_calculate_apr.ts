@@ -5,7 +5,7 @@
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
 
-import { TickMath } from '../index.js';
+import { TickMath } from '@byreal-io/byreal-clmm-sdk';
 
 import { chain, PoolAddress } from './config.js';
 
