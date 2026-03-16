@@ -27,6 +27,7 @@ export interface ICreatePositionParams {
   baseAmount: BN;
   otherAmountMax: BN;
   transactionOptions?: IMakeTransactionOptions;
+  refererPosition?: string;
 }
 
 export interface IClosePositionParams {

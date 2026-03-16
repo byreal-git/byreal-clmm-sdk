@@ -8,6 +8,7 @@ import {
   MintLayout,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
+import { createMemoInstruction } from '@solana/spl-memo';
 import { Connection, PublicKey, VersionedTransaction, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 import BN from 'bn.js';
 import { Decimal } from 'decimal.js';
@@ -285,7 +286,7 @@ export class Chain {
    * @returns IInstructionReturn Contains instructions, signers, and transaction objects
    */
   public async createPositionInstructions(params: ICreatePositionParams): Promise<IInstructionReturn> {
-    const { userAddress, poolInfo, tickLower, tickUpper, base, baseAmount, otherAmountMax, transactionOptions } =
+    const { userAddress, poolInfo, tickLower, tickUpper, base, baseAmount, otherAmountMax, transactionOptions, refererPosition } =
       params;
     const { mintA, mintB } = poolInfo;
 
@@ -319,10 +320,15 @@ export class Chain {
         withMetadata: 'create',
       });
 
-    // Merge all instructions: ATA creation → pre → position → end
+    const memoInstruction = refererPosition
+      ? createMemoInstruction(`referer_position=${refererPosition}`, [userAddress])
+      : null;
+
+    // Merge all instructions: pre → position → memo → cleanup
     const instructions = [
       ...preInstructions, // SOL/WSOL handling
       ...positionInstructions, // Position creation
+      ...(memoInstruction ? [memoInstruction] : []), // Referrer memo
       ...endInstructions, // Cleanup
     ];
 

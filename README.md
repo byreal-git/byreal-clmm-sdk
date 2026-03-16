@@ -6,10 +6,6 @@ Solana concentrated liquidity market maker SDK for Byreal protocol.
 
 ```bash
 npm install @byreal-io/byreal-clmm-sdk
-# or
-yarn add @byreal-io/byreal-clmm-sdk
-# or
-pnpm add @byreal-io/byreal-clmm-sdk
 ```
 
 ## Quick Start
@@ -90,14 +86,14 @@ const priceInTickLower = TickMath.getTickAlignedPriceDetails(
   new Decimal(userStartPrice),
   poolInfo.tickSpacing,
   poolInfo.mintDecimalsA,
-  poolInfo.mintDecimalsB
+  poolInfo.mintDecimalsB,
 );
 
 const priceInTickUpper = TickMath.getTickAlignedPriceDetails(
   new Decimal(userEndPrice),
   poolInfo.tickSpacing,
   poolInfo.mintDecimalsA,
-  poolInfo.mintDecimalsB
+  poolInfo.mintDecimalsB,
 );
 
 // Step 3: Calculate required amounts
