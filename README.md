@@ -207,6 +207,13 @@ console.log('Swap executed:', txid);
 
 Specify desired output amount, get required input.
 
+A price limit or insufficient liquidity can produce a partial quote. Check
+`allTrade` before using the quote as a full fill. Exact-input quotes expose
+`amountInRemaining`; exact-output quotes expose `amountOutRemaining`, both in
+raw token units. The requested `amountIn` or `amountOut` stays unchanged.
+`swapExactOutInstructions` and `swapExactOut` reject partial quotes before
+preparing accounts or requesting a signature.
+
 ```typescript
 import BN from 'bn.js';
 

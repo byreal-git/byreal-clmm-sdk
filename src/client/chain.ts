@@ -1012,7 +1012,7 @@ export class Chain {
 
     if (!exBitmapInfo || !ammConfig) throw new Error('Failed to get tick array bitmap extension or amm config');
 
-    const { allTrade, expectedAmountOut, remainingAccounts, executionPrice, feeAmount } =
+    const { allTrade, amountSpecifiedRemaining, expectedAmountOut, remainingAccounts, executionPrice, feeAmount } =
       await PoolUtils.getOutputAmountAndRemainAccounts({
         poolInfo,
         exBitmapInfo,
@@ -1030,6 +1030,7 @@ export class Chain {
 
     return {
       allTrade,
+      amountInRemaining: amountSpecifiedRemaining,
       isInputMintA,
       amountIn,
       expectedAmountOut,
@@ -1100,7 +1101,11 @@ export class Chain {
   }): Promise<IInstructionReturn> {
     const { poolInfo, quoteReturn, userAddress } = params;
 
-    // For exact output, we need to determine input amounts
+    if (!quoteReturn.allTrade) {
+      throw new Error('Cannot build an exact-output swap from a partial quote');
+    }
+
+    // For exact output, we need to determine input amounts.
     // If outputting tokenA, we input tokenB
     // If outputting tokenB, we input tokenA
     const isInputMintA = !quoteReturn.isOutputMintA;
@@ -1215,7 +1220,7 @@ export class Chain {
 
     if (!exBitmapInfo || !ammConfig) throw new Error('Failed to get tick array bitmap extension or amm config');
 
-    const { allTrade, expectedAmountIn, remainingAccounts, executionPrice, feeAmount } =
+    const { allTrade, amountSpecifiedRemaining, expectedAmountIn, remainingAccounts, executionPrice, feeAmount } =
       await PoolUtils.getInputAmountAndRemainAccounts({
         poolInfo,
         exBitmapInfo,
@@ -1233,6 +1238,7 @@ export class Chain {
 
     return {
       allTrade,
+      amountOutRemaining: amountSpecifiedRemaining.neg(),
       isOutputMintA,
       amountOut,
       expectedAmountIn,

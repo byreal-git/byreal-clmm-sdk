@@ -195,6 +195,7 @@ export class PoolUtils {
     catchLiquidityInsufficient?: boolean;
   }): {
     allTrade: boolean;
+    amountSpecifiedRemaining: BN;
     expectedAmountOut: BN;
     remainingAccounts: PublicKey[];
     executionPrice: BN;
@@ -251,6 +252,7 @@ export class PoolUtils {
     // - Final execution price and fees
     const {
       allTrade,
+      amountSpecifiedRemaining,
       amountCalculated: outputAmount,
       accounts: reaminAccounts,
       sqrtPriceX64: executionPrice,
@@ -280,6 +282,7 @@ export class PoolUtils {
     // Note: outputAmount is negative (indicating outflow), needs to be multiplied by -1 to convert to positive
     return {
       allTrade,
+      amountSpecifiedRemaining,
       expectedAmountOut: outputAmount.mul(NEGATIVE_ONE),
       remainingAccounts: allNeededAccounts,
       executionPrice,
@@ -321,6 +324,7 @@ export class PoolUtils {
     catchLiquidityInsufficient?: boolean;
   }): {
     allTrade: boolean;
+    amountSpecifiedRemaining: BN;
     expectedAmountIn: BN;
     remainingAccounts: PublicKey[];
     executionPrice: BN;
@@ -374,6 +378,7 @@ export class PoolUtils {
 
     const {
       allTrade,
+      amountSpecifiedRemaining,
       amountCalculated: inputAmount,
       accounts: reaminAccounts,
       sqrtPriceX64: executionPrice,
@@ -403,6 +408,7 @@ export class PoolUtils {
     // 注意：对于精确输出，inputAmount 包含了手续费
     return {
       allTrade,
+      amountSpecifiedRemaining,
       expectedAmountIn: inputAmount,
       remainingAccounts: allNeededAccounts,
       executionPrice,

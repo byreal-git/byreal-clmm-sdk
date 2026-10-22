@@ -277,8 +277,8 @@ export abstract class SwapMath {
     }
 
     return {
-      allTrade: true,
-      amountSpecifiedRemaining: ZERO,
+      allTrade: state.amountSpecifiedRemaining.isZero(),
+      amountSpecifiedRemaining: state.amountSpecifiedRemaining,
       amountCalculated: state.amountCalculated,
       feeAmount: state.feeAmount,
       sqrtPriceX64: state.sqrtPriceX64,

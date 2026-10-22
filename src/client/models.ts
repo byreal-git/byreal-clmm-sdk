@@ -131,6 +131,8 @@ export interface IQouteSwapParams {
 
 export interface IQouteSwapReturn {
   allTrade: boolean;
+  /** Unfilled input in raw token units; returned by SDK-generated quotes. */
+  amountInRemaining?: BN;
   amountIn: BN;
   isInputMintA: boolean;
   expectedAmountOut: BN;
@@ -163,6 +165,8 @@ export interface IQuoteSwapExactOutParams {
 
 export interface IQuoteSwapExactOutReturn {
   allTrade: boolean;
+  /** Unfilled output in raw token units; returned by SDK-generated quotes. */
+  amountOutRemaining?: BN;
   amountOut: BN;
   isOutputMintA: boolean;
   expectedAmountIn: BN;
